@@ -47,8 +47,9 @@ Alx_DjangoLearnLab/
 ### Task 2: Django Admin Interface
 
 - Model registration with Django admin
-- Customized admin interface
+- Customized admin interface with list display, filters, and search
 - Enhanced data management capabilities
+- Superuser account creation for admin access
 
 ## Technology Stack
 
@@ -137,6 +138,7 @@ Detailed operation examples are documented in individual markdown files and the 
 - `update.md`: Book update operation with expected output
 - `delete.md`: Book deletion operation with expected output
 - `CRUD_operations.md`: Complete CRUD operations reference
+- `admin_setup.md`: Django admin interface configuration and usage
 
 ## Contributing
 
