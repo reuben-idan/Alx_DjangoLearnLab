@@ -2,11 +2,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic.detail import DetailView
 from .models import Library
 from .models import Book
+from .models import UserProfile
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from django.urls import reverse_lazy
 from django.views import View
+from django.contrib.auth.decorators import user_passes_test, login_required
 
 # Function-based view to list all books (HTML template)
 def list_books(request):
@@ -50,3 +52,28 @@ class RegisterView(View):
             login(request, user)
             return redirect(reverse_lazy('list_books'))
         return render(request, 'relationship_app/register.html', {'form': form})
+
+# Role-based access control views
+def is_admin(user):
+    return hasattr(user, 'userprofile') and user.userprofile.role == 'Admin'
+
+def is_librarian(user):
+    return hasattr(user, 'userprofile') and user.userprofile.role == 'Librarian'
+
+def is_member(user):
+    return hasattr(user, 'userprofile') and user.userprofile.role == 'Member'
+
+@user_passes_test(is_admin)
+@login_required
+def admin_view(request):
+    return render(request, 'relationship_app/admin_view.html')
+
+@user_passes_test(is_librarian)
+@login_required
+def librarian_view(request):
+    return render(request, 'relationship_app/librarian_view.html')
+
+@user_passes_test(is_member)
+@login_required
+def member_view(request):
+    return render(request, 'relationship_app/member_view.html')
