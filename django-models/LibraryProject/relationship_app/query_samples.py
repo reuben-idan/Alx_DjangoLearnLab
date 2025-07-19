@@ -6,10 +6,11 @@ authors_books = Book.objects.filter(author=specific_author)
 print("Books by George Orwell:", list(authors_books))
 
 # List all books in a library
-library = Library.objects.get(name="Central Library")
+library_name = "Central Library"
+library = Library.objects.get(name=library_name)
 library_books = library.books.all()
-print("Books in Central Library:", list(library_books))
+print(f"Books in {library_name}:", list(library_books))
 
 # Retrieve the librarian for a library
 librarian = Librarian.objects.get(library=library)
-print("Librarian for Central Library:", librarian.name) 
+print(f"Librarian for {library_name}:", librarian.name) 
