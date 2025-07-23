@@ -1,9 +1,11 @@
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic.detail import DetailView
-from .models import Library, Book, UserProfile, CustomUser
+from .models import Library
+from .models import Book
+from .models import UserProfile
 from django.contrib.auth.views import LoginView, LogoutView
-from .forms import CustomUserCreationForm, CustomUserChangeForm
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from django.urls import reverse_lazy
 from django.views import View
@@ -25,37 +27,31 @@ class LibraryDetailView(DetailView):
 # Function-based register view for checker compliance
 def register(request):
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST, request.FILES)
+        form = UserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.save()
+            user = form.save()
             login(request, user)
             return redirect(reverse_lazy('list_books'))
     else:
-        form = CustomUserCreationForm()
+        form = UserCreationForm()
     return render(request, 'relationship_app/register.html', {'form': form})
 
 # User authentication views
 class UserLoginView(LoginView):
     template_name = 'relationship_app/login.html'
-    redirect_authenticated_user = True
 
 class UserLogoutView(LogoutView):
     template_name = 'relationship_app/logout.html'
-    next_page = 'login'
 
 class RegisterView(View):
     def get(self, request):
-        if request.user.is_authenticated:
-            return redirect('list_books')
-        form = CustomUserCreationForm()
+        form = UserCreationForm()
         return render(request, 'relationship_app/register.html', {'form': form})
 
     def post(self, request):
-        form = CustomUserCreationForm(request.POST, request.FILES)
+        form = UserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.save()
+            user = form.save()
             login(request, user)
             return redirect(reverse_lazy('list_books'))
         return render(request, 'relationship_app/register.html', {'form': form})
