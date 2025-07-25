@@ -1,0 +1,12 @@
+<form method="post">
+    {% csrf_token %}
+    <label for="title">Title:</label><br>
+    <input type="text" id="title" name="title" value="{{ book.title }}"><br><br>
+    <label for="author">Author:</label><br>
+    <input type="text" id="author" name="author" value="{{ book.author }}"><br><br>
+    <label for="publication_date">Publication Date:</label><br>
+    <input type="date" id="publication_date" name="publication_date" value="{{ book.publication_date|date:'Y-m-d' }}"><br><br>
+    <label for="isbn">ISBN:</label><br>
+    <input type="text" id="isbn" name="isbn" value="{{ book.isbn }}"><br><br>
+    <button type="submit">Submit</button>
+</form>
