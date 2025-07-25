@@ -30,6 +30,25 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
 
-class OtherModel(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    # other fields...
+class Book(models.Model):
+    title = models.CharField(max_length=200)
+    author = models.CharField(max_length=100)
+    publication_date = models.DateField()
+    isbn = models.CharField(max_length=13)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, blank=True)
+
+    class Meta:
+        permissions = [
+            ('can_view', 'Can view book'),
+            ('can_create', 'Can create book'),
+            ('can_edit', 'Can edit book'),
+            ('can_delete', 'Can delete book'),
+        ]
+        # Permissions:
+        # can_view: Allows users to view book details.
+        # can_create: Allows users to create new books.
+        # can_edit: Allows users to edit existing books.
+        # can_delete: Allows users to delete books.
+
+    def __str__(self):
+        return self.title
