@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import permission_required
 from .models import Book
 from django.core.exceptions import PermissionDenied
-from forms import ExampleForm
+from .forms import ExampleForm
+
 
 def book_list(request):
     books = Book.objects.all()
