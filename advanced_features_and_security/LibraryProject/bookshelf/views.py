@@ -35,3 +35,5 @@ def book_delete(request, pk):
     book = Book.objects.get(pk=pk)
     book.delete()
     return redirect('book_list')
+    
+# This code provides views for listing, creating, updating, and deleting books in a Django application.
