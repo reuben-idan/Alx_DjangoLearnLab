@@ -37,10 +37,31 @@ This project demonstrates the implementation of custom views and generic views i
 
 ## Query Parameters for Filtering Books
 
-- `author_id` - Filter books by author ID
-- `title` - Search books by title (case-insensitive partial match)
-- `min_year` - Filter books published in or after this year
-- `max_year` - Filter books published in or before this year
+### Filtering
+Filter books using exact matches on fields:
+- `author` - Filter by exact author ID
+- `publication_year` - Filter by exact publication year
+- `publication_year__gt` - Filter by publication year greater than
+- `publication_year__lt` - Filter by publication year less than
+
+### Searching
+Search across multiple fields using the `search` parameter:
+- `search` - Case-insensitive search in title and author name
+  Example: `?search=dune` will match books with "dune" in the title or author name
+
+### Ordering
+Order results using the `ordering` parameter:
+- `ordering=field` - Order by field in ascending order
+- `ordering=-field` - Order by field in descending order
+- Multiple fields: `ordering=field1,-field2`
+
+Supported fields: `title`, `publication_year`, `author__name`
+
+### Examples
+- `?author=1` - Get all books by author with ID 1
+- `?publication_year__gt=2000` - Get books published after 2000
+- `?search=sci-fi` - Search for "sci-fi" in title or author name
+- `?ordering=-publication_year,title` - Order by year (newest first), then by title
 
 ## Authentication
 

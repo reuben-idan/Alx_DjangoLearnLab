@@ -1,8 +1,9 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, filters
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import ListView, DetailView, UpdateView, DeleteView, CreateView
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
@@ -54,39 +55,54 @@ class BookCreateView(CreateView):
 
 class BookListView(ListView):
     """
-    View for listing all books.
+    View for listing all books with filtering, searching, and ordering capabilities.
+    
     GET /books/ - List all books
+    
+    Filtering:
+    - author: Filter by author ID (exact match)
+    - publication_year: Filter by exact publication year
+    - publication_year__gt: Filter by publication year greater than
+    - publication_year__lt: Filter by publication year less than
+    
+    Searching:
+    - search: Search in title and author name (case-insensitive)
+    
+    Ordering:
+    - ordering: Order by any field (prefix with '-' for descending order)
+      Example: ?ordering=-publication_year,title
     """
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
     
+    # Filtering configuration
+    filter_backends = [
+        DjangoFilterBackend,  # For field filtering
+        filters.SearchFilter,  # For search functionality
+        filters.OrderingFilter,  # For ordering
+    ]
+    
+    # Define which fields can be used for exact filtering
+    filterset_fields = {
+        'author': ['exact'],
+        'publication_year': ['exact', 'gt', 'lt'],
+    }
+    
+    # Define which fields should be searched
+    search_fields = ['title', 'author__name']
+    
+    # Define which fields can be used for ordering
+    ordering_fields = ['title', 'publication_year', 'author__name']
+    
+    # Default ordering
+    ordering = ['title']
+    
     def get_queryset(self):
         """
-        Optionally filter books by author ID if provided in the query parameters.
-        Also supports searching by title and filtering by publication year range.
+        Get the list of items for this view.
+        This method is overridden to add custom filtering if needed.
         """
-        queryset = Book.objects.all().order_by('title')
-        
-        # Filter by author_id if provided
-        author_id = self.request.query_params.get('author_id')
-        if author_id is not None:
-            queryset = queryset.filter(author_id=author_id)
-            
-        # Search by title if provided
-        title = self.request.query_params.get('title', '').strip()
-        if title:
-            queryset = queryset.filter(title__icontains=title)
-            
-        # Filter by publication year range if provided
-        min_year = self.request.query_params.get('min_year')
-        max_year = self.request.query_params.get('max_year')
-        
-        if min_year and min_year.isdigit():
-            queryset = queryset.filter(publication_year__gte=int(min_year))
-        if max_year and max_year.isdigit():
-            queryset = queryset.filter(publication_year__lte=int(max_year))
-            
-        return queryset
+        return Book.objects.all()
     
     def perform_create(self, serializer):
         """
