@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.generics import ListView, DetailView, UpdateView, DeleteView
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
@@ -35,11 +36,10 @@ from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer
 
 
-class BookListCreateView(generics.ListCreateAPIView):
+class BookListView(ListView):
     """
-    View for listing all books and creating a new book.
+    View for listing all books.
     GET /books/ - List all books
-    POST /books/ - Create a new book (requires authentication)
     """
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
@@ -89,14 +89,42 @@ class BookListCreateView(generics.ListCreateAPIView):
         # For example, to update search indices or send notifications
 
 
-class BookRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class BookDetailView(DetailView):
     """
-    View for retrieving, updating, or deleting a specific book.
+    View for retrieving a specific book.
     GET /books/<id>/ - Retrieve a book
+    """
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
+    lookup_field = 'id'
+
+
+class BookUpdateView(UpdateView):
+    """
+    View for updating a specific book.
     PUT /books/<id>/ - Update a book (requires authentication)
     PATCH /books/<id>/ - Partially update a book (requires authentication)
-    DELETE /books/<id>/ - Delete a book (requires authentication)
     """
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
+    lookup_field = 'id'
+
+    def perform_update(self, serializer):
+        book = serializer.save()
+        print(f"Book updated: {book.title} (ID: {book.id})")
+
+
+class BookDeleteView(DeleteView):
+    """
+    View for deleting a specific book.
+    DELETE /books/<id>/ - Delete a book (requires admin)
+    """
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [permissions.IsAdminUser]
+    lookup_field = 'id'
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
@@ -166,7 +194,7 @@ class BookRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         )
 
 
-class AuthorViewSet(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView):
+class AuthorViewSet(ListView, DetailView, UpdateView, DeleteView):
     """
     API endpoint that allows authors to be viewed or edited.
     GET /authors/ - List all authors
