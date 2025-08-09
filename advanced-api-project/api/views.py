@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import ListView, DetailView, UpdateView, DeleteView, CreateView
-import django_filters.rest_framework
+from django_filters import rest_framework as filters
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
@@ -77,7 +77,7 @@ class BookListView(ListView):
     
     # Filtering configuration
     filter_backends = [
-        django_filters.rest_framework.DjangoFilterBackend,  # For field filtering
+        filters.DjangoFilterBackend,  # For field filtering
         filters.SearchFilter,  # For search functionality
         filters.OrderingFilter,  # For ordering
     ]
