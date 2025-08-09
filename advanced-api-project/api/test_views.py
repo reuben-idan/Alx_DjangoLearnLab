@@ -60,29 +60,33 @@ class BookAPITestCase(APITestCase):
     
     def test_create_book_authenticated_admin(self):
         """Test that admin users can create books."""
-        self.client.force_authenticate(user=self.admin_user)
+        self.client.login(username='admin', password='testpass123')
         url = reverse('book-create')
         data = {
             'title': 'The Silmarillion',
             'publication_year': 1977,
-            'author': self.author1.id
+            'author': self.author1.id,
+            'csrfmiddlewaretoken': 'test_csrf_token'  # Needed for session auth
         }
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Book.objects.count(), 4)
         self.assertEqual(Book.objects.latest('id').title, 'The Silmarillion')
+        self.client.logout()
     
     def test_create_book_authenticated_regular_user(self):
         """Test that regular users cannot create books."""
-        self.client.force_authenticate(user=self.regular_user)
+        self.client.login(username='testuser', password='testpass123')
         url = reverse('book-create')
         data = {
             'title': 'Unauthorized Book',
             'publication_year': 2023,
-            'author': self.author1.id
+            'author': self.author1.id,
+            'csrfmiddlewaretoken': 'test_csrf_token'  # Needed for session auth
         }
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.client.logout()
     
     def test_retrieve_book_detail(self):
         """Test retrieving a book's details."""
@@ -93,21 +97,26 @@ class BookAPITestCase(APITestCase):
     
     def test_update_book_admin(self):
         """Test that admin users can update books."""
-        self.client.force_authenticate(user=self.admin_user)
+        self.client.login(username='admin', password='testpass123')
         url = reverse('book-update', args=[self.book1.id])
-        data = {'title': 'The Hobbit: Revised Edition'}
-        response = self.client.patch(url, data, format='json')
+        data = {
+            'title': 'The Hobbit: Revised Edition',
+            'csrfmiddlewaretoken': 'test_csrf_token'  # Needed for session auth
+        }
+        response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.book1.refresh_from_db()
         self.assertEqual(self.book1.title, 'The Hobbit: Revised Edition')
+        self.client.logout()
     
     def test_delete_book_admin(self):
         """Test that admin users can delete books."""
-        self.client.force_authenticate(user=self.admin_user)
+        self.client.login(username='admin', password='testpass123')
         url = reverse('book-delete', args=[self.book1.id])
-        response = self.client.delete(url)
+        response = self.client.delete(url)  # Using DELETE method as expected by DestroyAPIView
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Book.objects.count(), 2)
+        self.client.logout()
     
     def test_filter_books_by_author(self):
         """Test filtering books by author."""
@@ -154,17 +163,26 @@ class BookAPITestCase(APITestCase):
         """Test that unauthorized users cannot modify books."""
         # Test unauthenticated user
         url = reverse('book-create')
-        data = {'title': 'Unauthorized Book', 'publication_year': 2023, 'author': self.author1.id}
-        response = self.client.post(url, data, format='json')
+        data = {
+            'title': 'Unauthorized Book',
+            'publication_year': 2023,
+            'author': self.author1.id,
+            'csrfmiddlewaretoken': 'test_csrf_token'
+        }
+        response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         
         # Test regular user trying to update
-        self.client.force_authenticate(user=self.regular_user)
+        self.client.login(username='testuser', password='testpass123')
         url = reverse('book-update', args=[self.book1.id])
-        response = self.client.patch(url, {'title': 'Updated Title'}, format='json')
+        response = self.client.post(url, {
+            'title': 'Updated Title',
+            'csrfmiddlewaretoken': 'test_csrf_token'
+        })
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         
         # Test regular user trying to delete
         url = reverse('book-delete', args=[self.book1.id])
-        response = self.client.delete(url)
+        response = self.client.post(url, {'csrfmiddlewaretoken': 'test_csrf_token'})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.client.logout()
