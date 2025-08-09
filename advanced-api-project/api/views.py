@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.generics import ListView, DetailView, UpdateView, DeleteView
+from rest_framework.generics import ListView, DetailView, UpdateView, DeleteView, CreateView
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
@@ -34,6 +34,21 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         return request.user and request.user.is_authenticated
 from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer
+
+
+class BookCreateView(CreateView):
+    """
+    View for creating a new book.
+    POST /books/create/ - Create a new book (requires authentication)
+    """
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    
+    def perform_create(self, serializer):
+        """Set additional data or perform actions before saving a new book."""
+        book = serializer.save()
+        print(f"New book created: {book.title} (ID: {book.id})")
 
 
 class BookListView(ListView):
