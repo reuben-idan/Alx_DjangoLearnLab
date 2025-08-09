@@ -118,31 +118,44 @@ class BookDetailView(DetailView):
 class BookUpdateView(UpdateView):
     """
     View for updating a specific book.
-    PUT /books/<id>/ - Update a book (requires authentication)
-    PATCH /books/<id>/ - Partially update a book (requires authentication)
+    PUT /books/update/<id>/ - Update a book (requires authentication)
+    PATCH /books/update/<id>/ - Partially update a book (requires authentication)
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
     lookup_field = 'id'
+    
+    def get_serializer_context(self):
+        """Add the request to the serializer context."""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     def perform_update(self, serializer):
+        """Handle book update with logging."""
         book = serializer.save()
         print(f"Book updated: {book.title} (ID: {book.id})")
+
+    def update(self, request, *args, **kwargs):
+        """Handle update with custom response."""
+        response = super().update(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            response.data = {
+                'message': 'Book updated successfully',
+                'data': response.data
+            }
+        return response
 
 
 class BookDeleteView(DeleteView):
     """
     View for deleting a specific book.
-    DELETE /books/<id>/ - Delete a book (requires admin)
+    DELETE /books/delete/<id>/ - Delete a book (requires admin)
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAdminUser]
-    lookup_field = 'id'
-    queryset = Book.objects.all()
-    serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
     lookup_field = 'id'
     
     def get_serializer_context(self):
