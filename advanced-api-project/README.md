@@ -49,6 +49,100 @@ Search across multiple fields using the `search` parameter:
 - `search` - Case-insensitive search in title and author name
   Example: `?search=dune` will match books with "dune" in the title or author name
 
+## Testing Strategy
+
+The project includes a comprehensive test suite that verifies the functionality, security, and performance of the API endpoints. The testing strategy includes:
+
+### Test Types
+1. **Unit Tests**: Test individual components in isolation
+2. **Integration Tests**: Test the interaction between components
+3. **Authentication & Permission Tests**: Verify access control rules
+4. **Validation Tests**: Ensure data integrity through validation
+
+### Test Data
+- Test data is set up in the `setUp` method of the test class
+- Includes sample books, authors, and users with different permission levels
+- Database is reset between tests to ensure isolation
+
+### Running Tests
+
+Run the test suite with the following command:
+
+```bash
+python manage.py test api -v 2
+```
+
+## Test Cases
+
+### Book API Tests
+
+#### 1. Unauthenticated Access
+- [x] List books (GET /api/books/)
+- [x] View book details (GET /api/books/1/)
+- [x] Deny book creation (POST /api/books/)
+- [x] Deny book updates (PATCH /api/books/1/)
+- [x] Deny book deletion (DELETE /api/books/1/)
+
+#### 2. Regular User Access
+- [x] List books (GET /api/books/)
+- [x] View book details (GET /api/books/1/)
+- [x] Deny book creation (POST /api/books/)
+- [x] Deny book updates (PATCH /api/books/1/)
+- [x] Deny book deletion (DELETE /api/books/1/)
+
+#### 3. Admin User Access
+- [x] Create book (POST /api/books/)
+- [x] Update book (PATCH /api/books/1/)
+- [x] Delete book (DELETE /api/books/1/)
+
+#### 4. Data Validation
+- [x] Reject future publication years
+- [x] Require title and author for book creation
+- [x] Validate author exists
+
+#### 5. Filtering & Searching
+- [x] Filter books by author
+- [x] Filter books by publication year
+- [x] Search books by title/author
+- [x] Order books by publication year
+
+### Author API Tests
+
+#### 1. Unauthenticated Access
+- [x] List authors (GET /api/authors/)
+- [x] View author details (GET /api/authors/1/)
+- [x] Deny author creation (POST /api/authors/)
+- [x] Deny author updates (PATCH /api/authors/1/)
+- [x] Deny author deletion (DELETE /api/authors/1/)
+
+#### 2. Regular User Access
+- [x] List authors (GET /api/authors/)
+- [x] View author details (GET /api/authors/1/)
+- [x] Deny author creation (POST /api/authors/)
+- [x] Deny author updates (PATCH /api/authors/1/)
+- [x] Deny author deletion (DELETE /api/authors/1/)
+
+#### 3. Admin User Access
+- [x] Create author (POST /api/authors/)
+- [x] Update author (PATCH /api/authors/1/)
+- [x] Delete author (DELETE /api/authors/1/)
+
+## Test Coverage
+
+To generate a test coverage report:
+
+```bash
+coverage run --source='.' manage.py test
+coverage report
+coverage html  # Generates HTML report in htmlcov/
+```
+
+The test suite achieves high coverage of the codebase, with particular focus on:
+- API endpoints and views
+- Serializers and validation
+- Permission classes
+- Custom model methods
+
 ### Ordering
 Order results using the `ordering` parameter:
 - `ordering=field` - Order by field in ascending order

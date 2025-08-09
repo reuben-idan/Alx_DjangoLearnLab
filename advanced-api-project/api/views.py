@@ -1,9 +1,17 @@
-from rest_framework import generics, permissions, status, filters
+from rest_framework import generics, permissions, status, filters, viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.generics import ListView, DetailView, UpdateView, DeleteView, CreateView
-from django_filters import rest_framework as filters
+from rest_framework.generics import (
+    ListAPIView, RetrieveAPIView, CreateAPIView, 
+    UpdateAPIView, DestroyAPIView, ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView
+)
+from rest_framework.views import APIView
+from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.reverse import reverse
+from rest_framework.decorators import api_view
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):
@@ -16,8 +24,11 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
             
-        # Write permissions are only allowed to admin users
-        return request.user and request.user.is_staff
+        # Write permissions require authentication and admin status
+        if not request.user or not request.user.is_authenticated:
+            return False
+            
+        return request.user.is_staff
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -38,7 +49,18 @@ from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer
 
 
-class BookCreateView(CreateView):
+@api_view(['GET'])
+def api_root(request, format=None):
+    """
+    API root endpoint that provides links to the main resources.
+    """
+    return Response({
+        'books': reverse('book-list', request=request, format=format),
+        'authors': reverse('author-list', request=request, format=format),
+    })
+
+
+class BookCreateView(CreateAPIView):
     """
     View for creating a new book.
     POST /books/create/ - Create a new book (requires authentication)
@@ -53,7 +75,7 @@ class BookCreateView(CreateView):
         print(f"New book created: {book.title} (ID: {book.id})")
 
 
-class BookListView(ListView):
+class BookListView(ListAPIView):
     """
     View for listing all books with filtering, searching, and ordering capabilities.
     
@@ -77,9 +99,9 @@ class BookListView(ListView):
     
     # Filtering configuration
     filter_backends = [
-        filters.DjangoFilterBackend,  # For field filtering
-        filters.SearchFilter,  # For search functionality
-        filters.OrderingFilter,  # For ordering
+        DjangoFilterBackend,  # For field filtering
+        SearchFilter,  # For search functionality
+        OrderingFilter,  # For ordering
     ]
     
     # Define which fields can be used for exact filtering
@@ -121,7 +143,7 @@ class BookListView(ListView):
         # For example, to update search indices or send notifications
 
 
-class BookDetailView(DetailView):
+class BookDetailView(RetrieveAPIView):
     """
     View for retrieving a specific book.
     GET /books/<id>/ - Retrieve a book
@@ -132,7 +154,7 @@ class BookDetailView(DetailView):
     lookup_field = 'id'
 
 
-class BookUpdateView(UpdateView):
+class BookUpdateView(UpdateAPIView):
     """
     View for updating a specific book.
     PUT /books/update/<id>/ - Update a book (requires authentication)
@@ -165,7 +187,7 @@ class BookUpdateView(UpdateView):
         return response
 
 
-class BookDeleteView(DeleteView):
+class BookDeleteView(DestroyAPIView):
     """
     View for deleting a specific book.
     DELETE /books/delete/<id>/ - Delete a book (requires admin)
@@ -239,7 +261,7 @@ class BookDeleteView(DeleteView):
         )
 
 
-class AuthorViewSet(ListView, DetailView, UpdateView, DeleteView):
+class AuthorViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows authors to be viewed or edited.
     GET /authors/ - List all authors
