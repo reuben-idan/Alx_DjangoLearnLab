@@ -1,5 +1,5 @@
 import os
-from django.shortcuts import render, get_object_or_404, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView, View
 from django.db.models import Q
 from taggit.models import Tag
