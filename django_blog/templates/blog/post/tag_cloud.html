@@ -1,0 +1,16 @@
+{% load blog_tags %}
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Tags</h5>
+    </div>
+    <div class="card-body">
+        {% for tag in tags %}
+            <a href="{% url 'posts_by_tag' tag.slug %}" 
+               class="badge bg-light text-dark text-decoration-none mb-2" 
+               style="font-size: {{ tag.num_times }}em;">
+                {{ tag.name }} ({{ tag.num_times }})
+            </a>
+        {% endfor %}
+    </div>
+</div>

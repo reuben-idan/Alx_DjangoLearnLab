@@ -11,13 +11,15 @@ from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView,
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, PasswordChangeForm, PasswordResetForm, SetPasswordForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from ratelimit.decorators import ratelimit
+from django_ratelimit.decorators import ratelimit
 from django.views.generic import CreateView, TemplateView, FormView, UpdateView, DeleteView, ListView, DetailView
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 
@@ -25,7 +27,7 @@ from .models import Post, Profile, Comment
 from .forms import (
     UserRegisterForm, PostForm, UserLoginForm, 
     UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm,
-    CommentForm
+    CommentForm, SearchForm
 )
 
 # Blog post views
@@ -345,6 +347,29 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def get_success_url(self):
         """Redirect back to the post detail page."""
         return reverse('post_detail', kwargs={'pk': self.object.post.pk}) + '#comments'
+
+
+class PostSearchView(ListView):
+    """View for searching blog posts."""
+    model = Post
+    template_name = 'post_search.html'
+    context_object_name = 'posts'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        """Return search results based on query parameters."""
+        form = SearchForm(self.request.GET or None)
+        if form.is_valid():
+            return form.search()
+        return Post.published.all()
+    
+    def get_context_data(self, **kwargs):
+        """Add search form and query to the context."""
+        context = super().get_context_data(**kwargs)
+        context['search_form'] = SearchForm(self.request.GET or None)
+        context['query'] = self.request.GET.get('query', '')
+        context['selected_tag'] = self.request.GET.get('tag', '')
+        return context
 
 
 def about(request):

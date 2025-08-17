@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from taggit.managers import TaggableManager
 
 class Profile(models.Model):
     """
@@ -89,6 +90,13 @@ class Post(models.Model):
         default=0,
         editable=False,
         help_text="Number of times this post has been viewed"
+    )
+    
+    # Tags for the post
+    tags = TaggableManager(
+        blank=True,
+        help_text="A comma-separated list of tags",
+        verbose_name="Tags"
     )
 
     class Meta:

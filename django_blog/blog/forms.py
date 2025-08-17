@@ -1,10 +1,12 @@
 from django import forms
+from django.db.models import Q
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm, AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from taggit.forms import TagWidget
 from .models import Post, Profile, Comment
+from taggit.models import Tag
 
 class UserRegisterForm(UserCreationForm):
     """Form for user registration with email and password validation."""
@@ -161,15 +163,11 @@ class CustomPasswordChangeForm(PasswordChangeForm):
 
 class PostForm(forms.ModelForm):
     """Form for creating and updating blog posts."""
-    tags = forms.CharField(widget=TagWidget(
-        attrs={
-            'class': 'form-control',
-            'placeholder': 'Add tags separated by commas',
-            'data-role': 'tagsinput',
-        },
-        verbose_name='Tags',
+    tags = forms.CharField(
+        widget=TagWidget(),
+        required=False,
         help_text='Add tags to categorize your post (separate with commas)'
-    ), required=False)
+    )
     
     class Meta:
         model = Post
@@ -196,6 +194,48 @@ class PostForm(forms.ModelForm):
         if len(content) < 50:
             raise forms.ValidationError(_('Content must be at least 50 characters long.'))
         return content
+
+class SearchForm(forms.Form):
+    """Form for searching blog posts."""
+    query = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Search posts...',
+            'aria-label': 'Search'
+        })
+    )
+    tag = forms.ModelChoiceField(
+        queryset=Tag.objects.all(),
+        required=False,
+        empty_label='All Tags',
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'aria-label': 'Filter by tag'
+        })
+    )
+
+    def search(self):
+        """
+        Perform the search based on form data.
+        Returns a queryset of matching posts.
+        """
+        queryset = Post.published.all()
+        query = self.cleaned_data.get('query')
+        tag = self.cleaned_data.get('tag')
+
+        if query:
+            queryset = queryset.filter(
+                Q(title__icontains=query) |
+                Q(content__icontains=query) |
+                Q(excerpt__icontains=query)
+            )
+        
+        if tag:
+            queryset = queryset.filter(tags__in=[tag])
+        
+        return queryset.distinct()
+
 
 class CommentForm(forms.ModelForm):
     """
