@@ -161,6 +161,16 @@ class CustomPasswordChangeForm(PasswordChangeForm):
 
 class PostForm(forms.ModelForm):
     """Form for creating and updating blog posts."""
+    tags = forms.CharField(widget=TagWidget(
+        attrs={
+            'class': 'form-control',
+            'placeholder': 'Add tags separated by commas',
+            'data-role': 'tagsinput',
+        },
+        verbose_name='Tags',
+        help_text='Add tags to categorize your post (separate with commas)'
+    ), required=False)
+    
     class Meta:
         model = Post
         fields = ['title', 'content', 'status', 'featured_image', 'allow_comments', 'tags']
@@ -169,11 +179,6 @@ class PostForm(forms.ModelForm):
             'content': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Write your blog post here...', 'rows': 10}),
             'status': forms.Select(attrs={'class': 'form-select'}),
             'allow_comments': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'tags': TagWidget(attrs={
-                'class': 'form-control',
-                'placeholder': 'Add tags separated by commas',
-                'data-role': 'tagsinput',
-            })
         }
         help_texts = {
             'title': _('A clear and descriptive title for your post'),
