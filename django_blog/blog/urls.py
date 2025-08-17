@@ -18,6 +18,15 @@ urlpatterns = [
     path('posts/<int:pk>/delete/', 
          views.PostDeleteView.as_view(), 
          name='post_confirm_delete'),
+    path('post/<int:pk>/delete/', 
+         views.PostDeleteView.as_view(), 
+         name='post_delete'),
+    path('post/<int:pk>/update/', 
+         views.PostUpdateView.as_view(), 
+         name='post_update_alt'),
+    path('post/new/', 
+         views.PostCreateView.as_view(), 
+         name='post_create_alt'),
     
     # Authentication URLs
     path('accounts/login/', views.UserLoginView.as_view(), name='login'),
