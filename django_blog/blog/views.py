@@ -21,10 +21,11 @@ from django.http import HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 
-from .models import Post, Profile
+from .models import Post, Profile, Comment
 from .forms import (
     UserRegisterForm, PostForm, UserLoginForm, 
-    UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm
+    UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm,
+    CommentForm
 )
 
 # Blog post views
@@ -267,7 +268,7 @@ class CustomPasswordResetView(PasswordResetView):
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     """View for setting a new password after reset."""
     form_class = SetPasswordForm
-    template_name = 'registration/password_reset_confirm.html'
+    template_name = 'registration/password_reset_complete.html'
     success_url = reverse_lazy('password_reset_complete')
 
     def form_valid(self, form):

@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm, Authenti
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from .models import Post, Profile
+from .models import Post, Profile, Comment
 
 class UserRegisterForm(UserCreationForm):
     """Form for user registration with email and password validation."""
@@ -162,17 +162,12 @@ class PostForm(forms.ModelForm):
     """Form for creating and updating blog posts."""
     class Meta:
         model = Post
-        fields = ['title', 'content']
+        fields = ['title', 'content', 'status', 'featured_image', 'allow_comments']
         widgets = {
-            'title': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': _('Enter a title for your post')
-            }),
-            'content': forms.Textarea(attrs={
-                'class': 'form-control',
-                'placeholder': _('Write your blog post here...'),
-                'rows': 10
-            }),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter a title for your post'}),
+            'content': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Write your blog post here...', 'rows': 10}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'allow_comments': forms.CheckboxInput(attrs={'class': 'form-check-input'})
         }
         help_texts = {
             'title': _('A clear and descriptive title for your post'),
@@ -190,11 +185,15 @@ class PostForm(forms.ModelForm):
         if len(content) < 50:
             raise forms.ValidationError(_('Content must be at least 50 characters long.'))
         return content
+
+class CommentForm(forms.ModelForm):
+    """
+    Form for creating and updating comments.
+    """
+    class Meta:
+        model = Comment
+        fields = ['content', 'parent']
         widgets = {
-            'title': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': _('Enter post title')
-            }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 10,

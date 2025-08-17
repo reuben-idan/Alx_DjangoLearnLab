@@ -3,6 +3,7 @@ from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
+from .views import CommentCreateView, CommentUpdateView, CommentDeleteView
 
 urlpatterns = [
     # Core URLs
@@ -68,6 +69,17 @@ urlpatterns = [
              template_name='registration/password_reset_complete.html'
          ),
          name='password_reset_complete'),
+    
+    # Comment URLs
+    path('posts/<int:post_id>/comments/new/',
+         CommentCreateView.as_view(),
+         name='comment_create'),
+    path('posts/<int:post_id>/comments/<int:comment_id>/edit/',
+         CommentUpdateView.as_view(),
+         name='comment_update'),
+    path('posts/<int:post_id>/comments/<int:comment_id>/delete/',
+         CommentDeleteView.as_view(),
+         name='comment_delete'),
     
     # Password reset URLs
     path('password/reset/',

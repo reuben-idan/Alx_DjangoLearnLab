@@ -145,5 +145,72 @@ class Post(models.Model):
     def can_delete(self, user):
         """Check if a user can delete this post."""
         return user == self.author or user.has_perm('blog.can_delete_any_post')
+        
+    def __str__(self):
         """String for representing the Model object."""
         return f"{self.title} by {self.author.username}"
+
+
+class Comment(models.Model):
+    """
+    Model representing comments on blog posts.
+    """
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        help_text="The blog post this comment belongs to"
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        help_text="The user who created this comment"
+    )
+    content = models.TextField(
+        max_length=1000,
+        help_text="The content of the comment"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="The date and time when the comment was created"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="The date and time when the comment was last updated"
+    )
+    active = models.BooleanField(
+        default=True,
+        help_text="Set to False to hide this comment (soft delete)"
+    )
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='replies',
+        help_text="Parent comment if this is a reply"
+    )
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Comment'
+        verbose_name_plural = 'Comments'
+        permissions = [
+            ('can_moderate', 'Can moderate comments (approve/reject)'),
+        ]
+
+    def __str__(self):
+        return f'Comment by {self.author.username} on {self.post.title}'
+    
+    def can_edit(self, user):
+        """Check if a user can edit this comment."""
+        return user == self.author or user.has_perm('blog.can_moderate')
+    
+    def can_delete(self, user):
+        """Check if a user can delete this comment."""
+        return user == self.author or user.has_perm('blog.can_moderate')
+    
+    def get_absolute_url(self):
+        """Return URL to the comment's post with fragment identifier."""
+        return f"{self.post.get_absolute_url()}#comment-{self.id}"

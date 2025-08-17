@@ -136,6 +136,153 @@
         </div>
     </article>
     
+    <!-- Comments Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="h5 mb-0">
+                <i class="far fa-comments me-2"></i>
+                Comments
+                {% if comments %}
+                    <span class="badge bg-primary rounded-pill">{{ comments.paginator.count }}</span>
+                {% endif %}
+            </h3>
+        </div>
+        
+        <div class="card-body">
+            {% if post.allow_comments %}
+                {% if user.is_authenticated %}
+                    <!-- Comment Form -->
+                    <div class="comment-form mb-4">
+                        <h4 class="h6 mb-3">Leave a Comment</h4>
+                        <form method="post" action="{% url 'comment_create' post_id=post.id %}" class="mb-4">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {{ comment_form.content|as_crispy_field }}
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="far fa-paper-plane me-1"></i> Post Comment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <a href="{% url 'login' %}?next={{ request.path }}" class="alert-link">Sign in</a> 
+                        to leave a comment.
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-warning">
+                    Comments are disabled for this post.
+                </div>
+            {% endif %}
+            
+            <!-- Comments List -->
+            {% if comments %}
+                <div class="comments-list">
+                    {% for comment in comments %}
+                        <div id="comment-{{ comment.id }}" class="comment mb-4 {% if not comment.active %}comment-inactive{% endif %}">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3">
+                                    <img src="{{ comment.author.profile.profile_picture.url|default:'/static/images/default-avatar.png' }}" 
+                                         class="rounded-circle" width="48" height="48" alt="{{ comment.author.username }}">
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="comment-header d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <span class="fw-bold">{{ comment.author.get_full_name|default:comment.author.username }}</span>
+                                            <span class="text-muted small ms-2">{{ comment.created_at|timesince }} ago</span>
+                                            {% if comment.updated_at != comment.created_at %}
+                                                <span class="text-muted small ms-2">(edited)</span>
+                                            {% endif %}
+                                            {% if not comment.active %}
+                                                <span class="badge bg-warning text-dark ms-2">Pending Moderation</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if comment.can_edit %}
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-link text-muted p-0" type="button" 
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-h"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <a class="dropdown-item" 
+                                                           href="{% url 'comment_update' post_id=post.id comment_id=comment.id %}">
+                                                            <i class="far fa-edit me-2"></i>Edit
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" 
+                                                           href="{% url 'comment_delete' post_id=post.id comment_id=comment.id %}">
+                                                            <i class="far fa-trash-alt me-2"></i>Delete
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="comment-content">
+                                        {{ comment.content|linebreaks|urlize }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    <!-- Pagination -->
+                    {% if comments.has_other_pages %}
+                        <nav aria-label="Comments pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if comments.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?comment_page={{ comments.previous_page_number }}#comments">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for i in comments.paginator.page_range %}
+                                    {% if comments.number == i %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ i }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?comment_page={{ i }}#comments">{{ i }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if comments.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?comment_page={{ comments.next_page_number }}#comments">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="far fa-comment-slash fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No comments yet. Be the first to comment!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
     <!-- Related Posts -->
     {% if related_posts %}
         <div class="card mb-4">
