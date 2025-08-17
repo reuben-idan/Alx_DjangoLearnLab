@@ -1,0 +1,12 @@
+{% autoescape off %}
+Hello {{ user.username }},
+
+Please click the link below to verify your email address and activate your account:
+
+{{ protocol }}://{{ domain }}{% url 'verify-email' uidb64=uid token=token %}
+
+If you didn't create an account, please ignore this email.
+
+Thanks,
+The Django Blog Team
+{% endautoescape %}

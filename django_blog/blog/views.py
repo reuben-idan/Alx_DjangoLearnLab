@@ -1,6 +1,6 @@
 import os
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
@@ -69,20 +69,29 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         messages.success(self.request, self.success_message)
         return super().delete(request, *args, **kwargs)
 
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
+
 class UserLoginView(LoginView):
-    """View for user login."""
+    """View for user login with rate limiting."""
     form_class = UserLoginForm
     template_name = 'registration/login.html'
     redirect_authenticated_user = True
     
+    @method_decorator(ratelimit(key='post:username', rate='5/m', method='POST', block=True))
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+    
     def form_valid(self, form):
         remember_me = form.cleaned_data.get('remember_me')
         if not remember_me:
-            # Set session to expire when the user closes the browser
             self.request.session.set_expiry(0)
-            # Set a long expiration for the session cookie
             self.request.session.modified = True
         return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(self.request, 'Invalid username or password.')
+        return super().form_invalid(form)
 
 class UserLogoutView(LogoutView):
     """View for user logout."""
@@ -93,10 +102,55 @@ class UserLogoutView(LogoutView):
         return super().dispatch(request, *args, **kwargs)
 
 class SignUpView(FormView):
-    """View for user registration."""
+    """View for user registration with email verification."""
     form_class = UserRegisterForm
     template_name = 'registration/signup.html'
-    success_url = reverse_lazy('home')
+    success_url = reverse_lazy('login')
+    
+    def form_valid(self, form):
+        # Create user but don't save yet
+        user = form.save(commit=False)
+        user.is_active = False  # User inactive until email verification
+        user.save()
+        
+        # Send verification email
+        self.send_verification_email(user, form.cleaned_data.get('email'))
+        
+        messages.info(
+            self.request,
+            'Please check your email to complete registration.'
+        )
+        return super().form_valid(form)
+    
+    def send_verification_email(self, user, to_email):
+        """Send email with verification link."""
+        mail_subject = 'Verify your email address'
+        message = render_to_string('emails/verify_email.html', {
+            'user': user,
+            'domain': get_current_site(self.request).domain,
+            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+            'token': default_token_generator.make_token(user),
+            'protocol': 'https' if self.request.is_secure() else 'http',
+        })
+        send_mail(mail_subject, message, None, [to_email])
+
+class VerifyEmailView(View):
+    """View to handle email verification."""
+    def get(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            messages.success(request, 'Your email has been verified! You can now log in.')
+            return redirect('login')
+        else:
+            messages.error(request, 'The verification link is invalid or has expired.')
+            return redirect('signup')
 
     def dispatch(self, request, *args, **kwargs):
         if self.request.user.is_authenticated:

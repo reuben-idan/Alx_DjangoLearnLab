@@ -19,6 +19,9 @@ urlpatterns = [
     path('login/', views.UserLoginView.as_view(), name='login'),
     path('logout/', views.UserLogoutView.as_view(), name='logout'),
     path('signup/', views.SignUpView.as_view(), name='signup'),
+    path('verify-email/<uidb64>/<token>/', 
+         views.VerifyEmailView.as_view(), 
+         name='verify-email'),
     path('profile/', views.profile, name='profile'),
     path('account/delete/', views.delete_account, name='delete_account'),
     
