@@ -1,28 +1,74 @@
 import os
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView, View
 from django.db.models import Q
 from taggit.models import Tag
-from django.views.generic.detail import SingleObjectMixin
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
+from django.urls import reverse, reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
-from django.urls import reverse_lazy, reverse
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
-from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView, PasswordResetView, PasswordResetConfirmView
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, PasswordChangeForm, PasswordResetForm, SetPasswordForm
-from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.db.models import Count
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .models import Post, Comment, Like, Category, Tag, Profile
+from .forms import PostForm, CommentForm, SearchForm, TagForm, UserRegisterForm, UserLoginForm, UserUpdateForm, ProfileUpdateForm
+from django.utils import timezone
+from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
-from django_ratelimit.decorators import ratelimit
-from django.views.generic import CreateView, TemplateView, FormView, UpdateView, DeleteView, ListView, DetailView
-from django.contrib import messages
-from django.utils.translation import gettext_lazy as _
-from django.conf import settings
-from django.core.paginator import Paginator
-from django.http import HttpResponseRedirect
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.debug import sensitive_post_parameters
+from django.contrib.auth import login as auth_login, logout as auth_logout, get_user_model
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.views import LoginView as BaseLoginView
+from django.views.generic import CreateView
+from django.contrib.auth.views import LogoutView as BaseLogoutView, PasswordChangeView, PasswordResetView, PasswordResetConfirmView, PasswordResetCompleteView, PasswordResetDoneView
+from django.contrib.messages.views import SuccessMessageMixin
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.translation import gettext_lazy as _
+
+# Authentication Views
+class SignUpView(SuccessMessageMixin, CreateView):
+    form_class = UserRegisterForm
+    template_name = 'registration/signup.html'
+    success_url = reverse_lazy('login')
+    success_message = 'Your account has been created! Please log in.'
+
+class CustomLoginView(BaseLoginView):
+    form_class = UserLoginForm
+    template_name = 'registration/login.html'
+    
+    def form_valid(self, form):
+        remember_me = form.cleaned_data.get('remember_me', False)
+        if not remember_me:
+            self.request.session.set_expiry(0)
+        return super().form_valid(form)
+
+@login_required
+def profile(request):
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(
+            request.POST,
+            request.FILES,
+            instance=request.user.profile
+        )
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, 'Your profile has been updated!')
+            return redirect('profile')
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
+
+    context = {
+        'u_form': u_form,
+        'p_form': p_form
+    }
+    return render(request, 'registration/profile.html', context)
 from django.conf import settings
 
 from .models import Post, Profile, Comment
