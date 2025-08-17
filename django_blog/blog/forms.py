@@ -166,6 +166,33 @@ class PostForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
+                'placeholder': _('Enter a title for your post')
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': _('Write your blog post here...'),
+                'rows': 10
+            }),
+        }
+        help_texts = {
+            'title': _('A clear and descriptive title for your post'),
+            'content': _('The main content of your blog post (markdown supported)'),
+        }
+
+    def clean_title(self):
+        title = self.cleaned_data.get('title')
+        if len(title) < 5:
+            raise forms.ValidationError(_('Title must be at least 5 characters long.'))
+        return title
+
+    def clean_content(self):
+        content = self.cleaned_data.get('content')
+        if len(content) < 50:
+            raise forms.ValidationError(_('Content must be at least 50 characters long.'))
+        return content
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
                 'placeholder': _('Enter post title')
             }),
             'content': forms.Textarea(attrs={

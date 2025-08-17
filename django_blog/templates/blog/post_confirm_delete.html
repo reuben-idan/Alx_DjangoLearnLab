@@ -1,0 +1,99 @@
+{% extends 'blog/base_blog.html' %}
+{% load static %}
+
+{% block header_title %}Delete Post{% endblock %}
+{% block header_subtitle %}Are you sure you want to delete this post?{% endblock %}
+
+{% block blog_content %}
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Confirm Deletion
+            </h5>
+        </div>
+        <div class="card-body">
+            <h4 class="card-title">{{ post.title }}</h4>
+            <p class="card-text">
+                You are about to permanently delete the post "<strong>{{ post.title }}</strong>". 
+                This action cannot be undone.
+            </p>
+            
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong>Warning:</strong> Deleting this post will also remove all associated comments and related data.
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <a href="{% if post.get_absolute_url %}{{ post.get_absolute_url }}{% else %}{% url 'post_list' %}{% endif %}" 
+                   class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Cancel
+                </a>
+                
+                <form method="post" class="mb-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> Delete Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="card-footer text-muted">
+            <small>
+                <i class="far fa-calendar-alt me-1"></i>
+                Created on {{ post.created_at|date:"F d, Y" }}
+                {% if post.updated_at %}
+                    • Last updated {{ post.updated_at|timesince }} ago
+                {% endif %}
+            </small>
+        </div>
+    </div>
+    
+    <!-- Post Preview -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Post Preview</h5>
+        </div>
+        <div class="card-body">
+            <h3 class="card-title">{{ post.title }}</h3>
+            <p class="text-muted">
+                <i class="far fa-user me-1"></i> {{ post.author.get_full_name|default:post.author.username }}
+                <span class="mx-2">•</span>
+                <i class="far fa-calendar-alt me-1"></i> {{ post.published_date|date:"F d, Y" }}
+                <span class="mx-2">•</span>
+                <i class="far fa-eye me-1"></i> {{ post.view_count }} views
+            </p>
+            
+            {% if post.featured_image %}
+                <img src="{{ post.featured_image.url }}" class="img-fluid rounded mb-3" alt="{{ post.title }}">
+            {% endif %}
+            
+            <div class="post-content">
+                {{ post.content|safe|truncatewords_html:100 }}
+                {% if post.content|wordcount > 100 %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Content truncated. The full post contains {{ post.content|wordcount }} words.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Prevent accidental form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const confirmDelete = confirm('Are you absolutely sure you want to delete this post? This action cannot be undone.');
+                if (!confirmDelete) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

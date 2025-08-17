@@ -1,13 +1,21 @@
 import os
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView, View
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.views.generic.detail import SingleObjectMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
 from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView, PasswordResetView, PasswordResetConfirmView
-from django.contrib.auth.forms import PasswordChangeForm, PasswordResetForm, SetPasswordForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, PasswordChangeForm, PasswordResetForm, SetPasswordForm
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from ratelimit.decorators import ratelimit
+from django.views.generic import CreateView, TemplateView, FormView, UpdateView, DeleteView, ListView, DetailView
+from django.contrib import messages
+from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
@@ -19,58 +27,97 @@ from .forms import (
     UserUpdateForm, ProfileUpdateForm, CustomPasswordChangeForm
 )
 
+# Blog post views
 class PostListView(ListView):
+    """View for displaying a list of blog posts."""
     model = Post
-    template_name = 'home.html'
+    template_name = 'blog/post_list.html'
     context_object_name = 'posts'
-    ordering = ['-published_date']
-    paginate_by = 5
+    paginate_by = 10
+    
+    def get_queryset(self):
+        """Return only published posts for non-staff users."""
+        queryset = Post.objects.filter(status='published')
+        if self.request.user.is_staff:
+            queryset = Post.objects.all()
+        return queryset.order_by('-published_date')
 
 class PostDetailView(DetailView):
+    """View for displaying a single blog post."""
     model = Post
-    template_name = 'post_detail.html'
+    template_name = 'blog/post_detail.html'
     context_object_name = 'post'
+    
+    def get_queryset(self):
+        """Only show published posts to non-staff users."""
+        queryset = super().get_queryset()
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(status='published')
+        return queryset
+    
+    def get(self, request, *args, **kwargs):
+        """Increment view count when post is viewed."""
+        response = super().get(request, *args, **kwargs)
+        if self.object.status == 'published':
+            self.object.increment_view_count()
+        return response
 
 class PostCreateView(LoginRequiredMixin, CreateView):
+    """View for creating a new blog post."""
     model = Post
     form_class = PostForm
-    template_name = 'post_form.html'
-
+    template_name = 'blog/post_form.html'
+    
     def form_valid(self, form):
+        """Set the author to the current user and handle published status."""
         form.instance.author = self.request.user
-        messages.success(self.request, 'Your post has been created!')
+        
+        # Check if user has permission to publish
+        if not self.request.user.has_perm('blog.can_publish'):
+            form.instance.status = 'draft'
+            
+        messages.success(self.request, _('Your post has been created!'))
         return super().form_valid(form)
+    
+    def get_success_url(self):
+        """Redirect to the created post."""
+        return reverse('post_detail', kwargs={'pk': self.object.pk})
 
 class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """View for updating an existing blog post."""
     model = Post
     form_class = PostForm
-    template_name = 'post_form.html'
-
+    template_name = 'blog/post_form.html'
+    
+    def test_func(self):
+        """Only allow the author or users with edit permission to update."""
+        post = self.get_object()
+        return post.can_edit(self.request.user)
+    
     def form_valid(self, form):
-        form.instance.author = self.request.user
-        messages.success(self.request, 'Your post has been updated!')
+        """Set the updated timestamp."""
+        messages.success(self.request, _('Your post has been updated!'))
         return super().form_valid(form)
     
-    def test_func(self):
-        post = self.get_object()
-        return self.request.user == post.author
+    def get_success_url(self):
+        """Redirect to the updated post."""
+        return reverse('post_detail', kwargs={'pk': self.object.pk})
 
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """View for deleting a blog post."""
     model = Post
-    template_name = 'post_confirm_delete.html'
-    success_url = reverse_lazy('home')
-    success_message = 'Your post has been deleted!'
-
+    template_name = 'blog/post_confirm_delete.html'
+    success_url = reverse_lazy('post_list')
+    
     def test_func(self):
+        """Only allow the author or users with delete permission to delete."""
         post = self.get_object()
-        return self.request.user == post.author
+        return post.can_delete(self.request.user)
     
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, self.success_message)
+        """Show success message after deletion."""
+        messages.success(request, _('Your post has been deleted!'))
         return super().delete(request, *args, **kwargs)
-
-from django_ratelimit.decorators import ratelimit
-from django.utils.decorators import method_decorator
 
 class UserLoginView(LoginView):
     """View for user login with rate limiting."""
@@ -79,6 +126,8 @@ class UserLoginView(LoginView):
     redirect_authenticated_user = True
     
     @method_decorator(ratelimit(key='post:username', rate='5/m', method='POST', block=True))
+    @method_decorator(never_cache)
+    @method_decorator(ensure_csrf_cookie)
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
     

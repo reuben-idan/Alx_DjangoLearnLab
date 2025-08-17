@@ -6,34 +6,59 @@ from . import views
 
 urlpatterns = [
     # Core URLs
-    path('', views.PostListView.as_view(), name='home'),
-    path('about/', views.about, name='about'),
-    
-    # Post URLs
-    path('post/<int:pk>/', views.PostDetailView.as_view(), name='post_detail'),
-    path('post/new/', views.PostCreateView.as_view(), name='post_new'),
-    path('post/<int:pk>/edit/', views.PostUpdateView.as_view(), name='post_edit'),
-    path('post/<int:pk>/delete/', views.PostDeleteView.as_view(), name='post_delete'),
+    path('', views.PostListView.as_view(), name='post_list'),
+    path('posts/', views.PostListView.as_view(), name='post_list'),
+    path('posts/create/', views.PostCreateView.as_view(), name='post_create'),
+    path('posts/<int:year>/<int:month>/<int:day>/<slug:slug>/', 
+         views.PostDetailView.as_view(), 
+         name='post_detail'),
+    path('posts/<int:pk>/edit/', 
+         views.PostUpdateView.as_view(), 
+         name='post_update'),
+    path('posts/<int:pk>/delete/', 
+         views.PostDeleteView.as_view(), 
+         name='post_confirm_delete'),
     
     # Authentication URLs
-    path('login/', views.UserLoginView.as_view(), name='login'),
-    path('logout/', views.UserLogoutView.as_view(), name='logout'),
-    path('signup/', views.SignUpView.as_view(), name='signup'),
+    path('accounts/login/', views.UserLoginView.as_view(), name='login'),
+    path('accounts/logout/', views.UserLogoutView.as_view(), name='logout'),
+    path('accounts/signup/', views.SignUpView.as_view(), name='signup'),
+    path('accounts/verify-email/<uidb64>/<token>/', 
+         views.VerifyEmailView.as_view(), 
+         name='verify-email'),
+    path('accounts/profile/', views.profile, name='profile'),
+    path('accounts/delete/', views.delete_account, name='delete_account'),
     path('verify-email/<uidb64>/<token>/', 
          views.VerifyEmailView.as_view(), 
          name='verify-email'),
     path('profile/', views.profile, name='profile'),
     path('account/delete/', views.delete_account, name='delete_account'),
     
-    # Password change URLs
-    path('password/change/', 
+    # Password management URLs
+    path('accounts/password/change/', 
          views.CustomPasswordChangeView.as_view(), 
          name='password_change'),
-    path('password/change/done/',
+    path('accounts/password/change/done/',
          auth_views.PasswordChangeDoneView.as_view(
              template_name='registration/password_change_done.html'
          ),
          name='password_change_done'),
+    path('accounts/password/reset/', 
+         views.CustomPasswordResetView.as_view(), 
+         name='password_reset'),
+    path('accounts/password/reset/done/',
+         auth_views.PasswordResetDoneView.as_view(
+             template_name='registration/password_reset_done.html'
+         ),
+         name='password_reset_done'),
+    path('accounts/reset/<uidb64>/<token>/',
+         views.CustomPasswordResetConfirmView.as_view(),
+         name='password_reset_confirm'),
+    path('accounts/reset/done/',
+         auth_views.PasswordResetCompleteView.as_view(
+             template_name='registration/password_reset_complete.html'
+         ),
+         name='password_reset_complete'),
     
     # Password reset URLs
     path('password/reset/',

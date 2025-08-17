@@ -1,0 +1,224 @@
+{% extends 'blog/base_blog.html' %}
+{% load static crispy_forms_tags %}
+
+{% block header_title %}
+    {% if form.instance.pk %}Edit Post{% else %}Create New Post{% endif %}
+{% endblock %}
+
+{% block header_subtitle %}
+    Share your thoughts and ideas with the world
+{% endblock %}
+
+{% block blog_content %}
+    <div class="card
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        {{ form.title|as_crispy_field }}
+                        {{ form.content|as_crispy_field }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Featured Image</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="id_featured_image" name="featured_image" accept="image/*">
+                                <label class="custom-file-label" for="id_featured_image">
+                                    {% if form.instance.featured_image %}
+                                        {{ form.instance.featured_image.name|slice:":30" }}{% if form.instance.featured_image.name|length > 30 %}...{% endif %}
+                                    {% else %}
+                                        Choose image...
+                                    {% endif %}
+                                </label>
+                                {% if form.instance.featured_image %}
+                                    <div class="mt-2">
+                                        <img src="{{ form.instance.featured_image.url }}" alt="Current featured image" class="img-thumbnail" style="max-height: 200px;">
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">
+                                    Recommended size: 1200x630px (2:1 aspect ratio)
+                                </small>
+                                {% if form.featured_image.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.featured_image.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Publish</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if form.instance.pk %}
+                                    <p class="text-muted small mb-3">
+                                        <strong>Created:</strong> {{ form.instance.created_at|date:"F d, Y" }}<br>
+                                        <strong>Last updated:</strong> {{ form.instance.updated_at|date:"F d, Y H:i" }}
+                                    </p>
+                                {% endif %}
+                                
+                                {% if user.has_perm('blog.can_publish') %}
+                                    {{ form.status|as_crispy_field }}
+                                {% else %}
+                                    <div class="form-group">
+                                        <label class="form-label">Status</label>
+                                        <input type="text" class="form-control" value="Draft" readonly>
+                                        <small class="form-text text-muted">Only moderators can publish posts.</small>
+                                        <input type="hidden" name="status" value="draft">
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="d-grid gap-2 mt-4">
+                                    <button type="submit" name="save" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>
+                                        {% if form.instance.pk %}Update{% else %}Create{% endif %} Post
+                                    </button>
+                                    
+                                    {% if form.instance.pk %}
+                                        <a href="{{ form.instance.get_absolute_url }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times me-1"></i> Cancel
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'post_list' %}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times me-1"></i> Cancel
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Categories & Tags</h5>
+                            </div>
+                            <div class="card-body">
+                                {{ form.categories|as_crispy_field }}
+                                {{ form.tags|as_crispy_field }}
+                                <small class="form-text text-muted">
+                                    Separate tags with commas
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Preview Modal -->
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewModalLabel">Post Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="previewContent">
+                    <!-- Preview content will be inserted here by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_css %}
+    {{ form.media.css }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <style>
+        .markdown-body {
+            min-height: 300px;
+        }
+        .editor-toolbar {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-bottom: none;
+        }
+        .CodeMirror {
+            border: 1px solid #dee2e6;
+            border-top: none;
+            min-height: 300px;
+        }
+        .custom-file-input:lang(en) ~ .custom-file-label::after {
+            content: "Browse";
+        }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+    {{ form.media.js }}
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <script>
+        // Initialize Markdown Editor
+        const simplemde = new SimpleMDE({
+            element: document.getElementById('id_content'),
+            spellChecker: false,
+            status: false,
+            autosave: {
+                enabled: true,
+                uniqueId: 'post-editor-{{ form.instance.pk|default:"new" }}',
+                delay: 1000,
+            },
+            toolbar: [
+                'bold', 'italic', 'heading', '|',
+                'quote', 'unordered-list', 'ordered-list', '|',
+                'link', 'image', 'table', '|',
+                'preview', 'side-by-side', 'fullscreen', '|',
+                'guide'
+            ]
+        });
+        
+        // Handle file input change
+        document.getElementById('id_featured_image').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : 'Choose file...';
+            const label = this.nextElementSibling;
+            label.textContent = fileName.length > 30 ? fileName.substring(0, 30) + '...' : fileName;
+            
+            // Show image preview if an image is selected
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    let preview = document.getElementById('image-preview');
+                    if (!preview) {
+                        preview = document.createElement('div');
+                        preview.id = 'image-preview';
+                        preview.className = 'mt-2';
+                        label.parentNode.insertBefore(preview, label.nextSibling);
+                    }
+                    preview.innerHTML = `<img src="${event.target.result}" class="img-thumbnail" style="max-height: 200px;">`;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+        
+        // Preview functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const previewButton = document.getElementById('preview-button');
+            if (previewButton) {
+                previewButton.addEventListener('click', function() {
+                    // Get the HTML content from the Markdown
+                    const previewContent = document.getElementById('previewContent');
+                    const title = document.getElementById('id_title').value || 'Untitled Post';
+                    const content = simplemde.markdown(simplemde.value());
+                    
+                    // Set the preview content
+                    previewContent.innerHTML = `
+                        <h1>${title}</h1>
+                        <hr>
+                        <div class="post-content">${content}</div>
+                    `;
+                    
+                    // Show the modal
+                    const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+                    previewModal.show();
+                });
+            }
+        });
+    </script>
+{% endblock %}
