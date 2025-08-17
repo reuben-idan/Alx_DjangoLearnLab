@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm, Authenti
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from taggit.forms import TagWidget
 from .models import Post, Profile, Comment
 
 class UserRegisterForm(UserCreationForm):
@@ -162,12 +163,17 @@ class PostForm(forms.ModelForm):
     """Form for creating and updating blog posts."""
     class Meta:
         model = Post
-        fields = ['title', 'content', 'status', 'featured_image', 'allow_comments']
+        fields = ['title', 'content', 'status', 'featured_image', 'allow_comments', 'tags']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter a title for your post'}),
             'content': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Write your blog post here...', 'rows': 10}),
             'status': forms.Select(attrs={'class': 'form-select'}),
-            'allow_comments': forms.CheckboxInput(attrs={'class': 'form-check-input'})
+            'allow_comments': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'tags': TagWidget(attrs={
+                'class': 'form-control',
+                'placeholder': 'Add tags separated by commas',
+                'data-role': 'tagsinput',
+            })
         }
         help_texts = {
             'title': _('A clear and descriptive title for your post'),
