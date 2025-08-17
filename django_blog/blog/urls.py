@@ -3,7 +3,10 @@ from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
-from .views import CommentCreateView, CommentUpdateView, CommentDeleteView, PostSearchView
+from .views import (
+    CommentCreateView, CommentUpdateView, CommentDeleteView,
+    PostSearchView, PostByTagListView
+)
 
 urlpatterns = [
     # Core URLs
@@ -92,7 +95,7 @@ urlpatterns = [
     
     # Search and Tag URLs
     path('search/', PostSearchView.as_view(), name='post_search'),
-    path('tag/<slug:tag_slug>/', PostSearchView.as_view(), name='posts_by_tag'),
+    path('tags/<slug:tag_slug>/', PostByTagListView.as_view(), name='posts_by_tag'),
     
     # Password reset URLs
     path('password/reset/',

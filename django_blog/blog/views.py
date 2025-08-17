@@ -351,6 +351,26 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return reverse('post_detail', kwargs={'pk': self.object.post.pk}) + '#comments'
 
 
+class PostByTagListView(ListView):
+    """View for displaying posts filtered by a specific tag."""
+    model = Post
+    template_name = 'posts_by_tag.html'
+    context_object_name = 'posts'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        """Return posts filtered by the specified tag."""
+        tag_slug = self.kwargs.get('tag_slug')
+        self.tag = get_object_or_404(Tag, slug=tag_slug)
+        return Post.published.filter(tags__in=[self.tag]).distinct()
+    
+    def get_context_data(self, **kwargs):
+        """Add the tag to the template context."""
+        context = super().get_context_data(**kwargs)
+        context['tag'] = self.tag
+        return context
+
+
 class PostSearchView(ListView):
     """View for searching blog posts."""
     model = Post
