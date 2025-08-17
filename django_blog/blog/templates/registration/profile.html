@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}{% trans 'My Profile' %}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="h5 mb-0">{% trans 'Profile Information' %}</h2>
+                        <a href="{% url 'password_change' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-key me-1"></i> {% trans 'Change Password' %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-4">
+                                <div class="profile-picture-container mb-3">
+                                    {% if user.profile.profile_picture %}
+                                        <img src="{{ user.profile.profile_picture.url }}" 
+                                             alt="{{ user.username }}" 
+                                             class="img-thumbnail rounded-circle"
+                                             style="width: 150px; height: 150px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="d-flex align-items-center justify-content-center bg-light rounded-circle" 
+                                             style="width: 150px; height: 150px; font-size: 3rem;">
+                                            {{ user.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="{{ p_form.profile_picture.id_for_label }}" class="form-label">
+                                        {{ p_form.profile_picture.label }}
+                                    </label>
+                                    {{ p_form.profile_picture }}
+                                    {% if p_form.profile_picture.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ p_form.profile_picture.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-9">
+                                <h5 class="mb-4">{% trans 'Account Details' %}</h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ u_form.username.id_for_label }}" class="form-label">
+                                            {{ u_form.username.label }}
+                                        </label>
+                                        {{ u_form.username }}
+                                        {% if u_form.username.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ u_form.username.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ u_form.email.id_for_label }}" class="form-label">
+                                            {{ u_form.email.label }}
+                                        </label>
+                                        {{ u_form.email }}
+                                        {% if u_form.email.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ u_form.email.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ u_form.first_name.id_for_label }}" class="form-label">
+                                            {{ u_form.first_name.label }}
+                                        </label>
+                                        {{ u_form.first_name }}
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ u_form.last_name.id_for_label }}" class="form-label">
+                                            {{ u_form.last_name.label }}
+                                        </label>
+                                        {{ u_form.last_name }}
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-4">
+                                <h5 class="mb-4">{% trans 'Profile Information' %}</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ p_form.bio.id_for_label }}" class="form-label">
+                                        {{ p_form.bio.label }}
+                                    </label>
+                                    {{ p_form.bio }}
+                                    <div class="form-text">
+                                        {% trans 'Tell us a little about yourself...' %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ p_form.location.id_for_label }}" class="form-label">
+                                            {{ p_form.location.label }}
+                                        </label>
+                                        {{ p_form.location }}
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ p_form.birth_date.id_for_label }}" class="form-label">
+                                            {{ p_form.birth_date.label }}
+                                        </label>
+                                        {{ p_form.birth_date }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ p_form.website.id_for_label }}" class="form-label">
+                                        {{ p_form.website.label }}
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">https://</span>
+                                        {{ p_form.website }}
+                                    </div>
+                                    {% if p_form.website.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ p_form.website.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        <i class="bi bi-save me-2"></i> {% trans 'Save Changes' %}
+                                    </button>
+                                    
+                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                                        <i class="bi bi-trash me-2"></i> {% trans 'Delete Account' %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Account Activity -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">{% trans 'Account Activity' %}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-0">{% trans 'Member since' %}</h6>
+                            <small class="text-muted">{{ user.date_joined|date:"F j, Y" }}</small>
+                        </div>
+                        <div class="text-end">
+                            <h6 class="mb-0">{% trans 'Last login' %}</h6>
+                            <small class="text-muted">{{ user.last_login|timesince }} {% trans 'ago' %}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">{% trans 'Posts' %}</h6>
+                            <span class="badge bg-primary">{{ user.blog_posts.count }}</span>
+                        </div>
+                        <div>
+                            <a href="{% url 'password_reset' %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-shield-lock me-1"></i> {% trans 'Reset Password' %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAccountModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                    {% trans 'Delete Account' %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans 'Are you sure you want to delete your account? This action cannot be undone.' %}</p>
+                <p class="mb-0">
+                    <strong>{% trans 'Warning:' %}</strong>
+                    {% trans 'All your data, including posts and comments, will be permanently deleted.' %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans 'Cancel' %}
+                </button>
+                <form action="{% url 'delete_account' %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i> {% trans 'Delete My Account' %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add Bootstrap's is-invalid class to fields with errors
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add is-invalid class to fields with errors
+        const form = document.querySelector('form.needs-validation');
+        
+        if (form) {
+            // Add is-invalid to fields with errors
+            const errorFields = form.querySelectorAll('.is-invalid');
+            errorFields.forEach(field => {
+                field.classList.add('is-invalid');
+            });
+            
+            // Preview profile picture before upload
+            const profilePictureInput = document.getElementById('{{ p_form.profile_picture.id_for_label }}');
+            const profilePictureContainer = document.querySelector('.profile-picture-container');
+            
+            if (profilePictureInput && profilePictureContainer) {
+                profilePictureInput.addEventListener('change', function(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = profilePictureContainer.querySelector('img');
+                            if (img) {
+                                img.src = e.target.result;
+                            } else {
+                                const newImg = document.createElement('img');
+                                newImg.src = e.target.result;
+                                newImg.alt = 'Profile Picture';
+                                newImg.className = 'img-thumbnail rounded-circle';
+                                newImg.style.width = '150px';
+                                newImg.style.height = '150px';
+                                newImg.style.objectFit = 'cover';
+                                profilePictureContainer.innerHTML = '';
+                                profilePictureContainer.appendChild(newImg);
+                                profilePictureContainer.appendChild(profilePictureInput);
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+            
+            // Add validation on form submit
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        }
+    });
+</script>
+{% endblock %}

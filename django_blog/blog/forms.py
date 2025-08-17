@@ -1,26 +1,176 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm, AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
-from .models import Post
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from .models import Post, Profile
 
 class UserRegisterForm(UserCreationForm):
-    email = forms.EmailField(required=True)
+    """Form for user registration with email and password validation."""
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('Enter your email address')
+        })
+    )
+    username = forms.CharField(
+        max_length=30,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('Choose a username')
+        })
+    )
+    password1 = forms.CharField(
+        label=_("Password"),
+        strip=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('Create a password')
+        }),
+        help_text=_("Your password must contain at least 8 characters.")
+    )
+    password2 = forms.CharField(
+        label=_("Password confirmation"),
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('Confirm your password')
+        }),
+        help_text=_("Enter the same password as before, for verification.")
+    )
     
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
-    
+        
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("This email is already in use. Please use a different email address.")
+            raise ValidationError(
+                _("This email is already in use. Please use a different email address."),
+                code='email_exists'
+            )
+        return email
+    
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.filter(username=username).exists():
+            raise ValidationError(
+                _("This username is already taken. Please choose another."),
+                code='username_exists'
+            )
+        return username
+
+class UserLoginForm(AuthenticationForm):
+    """Form for user login with email/username and password."""
+    username = forms.CharField(
+        label=_("Email or Username"),
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('Enter your email or username')
+        })
+    )
+    password = forms.CharField(
+        label=_("Password"),
+        strip=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('Enter your password')
+        })
+    )
+
+class UserUpdateForm(forms.ModelForm):
+    """Form for updating user information."""
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('Enter your email address')
+        })
+    )
+    
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise ValidationError(
+                _("This email is already in use. Please use a different email address."),
+                code='email_exists'
+            )
         return email
 
+class ProfileUpdateForm(forms.ModelForm):
+    """Form for updating user profile information."""
+    class Meta:
+        model = Profile
+        fields = ['bio', 'location', 'birth_date', 'website', 'profile_picture']
+        widgets = {
+            'bio': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': _('Tell us about yourself...')
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': _('Your location')
+            }),
+            'birth_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://example.com'
+            }),
+        }
+
+class CustomPasswordChangeForm(PasswordChangeForm):
+    """Form for changing user password with custom styling."""
+    old_password = forms.CharField(
+        label=_("Current password"),
+        strip=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('Enter your current password')
+        })
+    )
+    new_password1 = forms.CharField(
+        label=_("New password"),
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('Enter new password')
+        }),
+        help_text=_("Your password must contain at least 8 characters.")
+    )
+    new_password2 = forms.CharField(
+        label=_("Confirm new password"),
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': _('Confirm new password')
+        })
+    )
+
 class PostForm(forms.ModelForm):
+    """Form for creating and updating blog posts."""
     class Meta:
         model = Post
         fields = ['title', 'content']
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': _('Enter post title')
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 10,
+                'placeholder': _('Write your post content here...')
+            }),
         }

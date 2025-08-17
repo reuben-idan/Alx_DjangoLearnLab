@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}{% trans 'Delete Account' %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger shadow">
+                <div class="card-header bg-danger text-white">
+                    <h2 class="h5 mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% trans 'Delete Your Account' %}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="text-danger mb-3" style="font-size: 4rem;">
+                            <i class="bi bi-person-x-fill"></i>
+                        </div>
+                        <h3 class="h4 mb-3">{% trans 'Are you sure you want to delete your account?' %}</h3>
+                        
+                        <div class="alert alert-warning text-start">
+                            <h5 class="alert-heading">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                {% trans 'This action cannot be undone!' %}
+                            </h5>
+                            <p class="mb-0">
+                                {% trans 'All your data, including your profile, posts, and comments, will be permanently deleted.' %}
+                            </p>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-body text-start">
+                                <h5 class="card-title">{% trans 'What will be deleted:' %}</h5>
+                                <ul class="mb-0">
+                                    <li>{% trans 'Your profile information' %}</li>
+                                    <li>{% trans 'All your blog posts' %}</li>
+                                    <li>{% trans 'All your comments' %}</li>
+                                    <li>{% trans 'Your account credentials' %}</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <form method="post" class="mb-4">
+                            {% csrf_token %}
+                            <div class="mb-3 form-check
+                                <input type="checkbox" class="form-check-input" id="confirmDelete" required>
+                                <label class="form-check-label" for="confirmDelete">
+                                    {% trans 'Yes, I understand that this action cannot be undone and I want to delete my account.' %}
+                                </label>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'profile' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i> {% trans 'Cancel' %}
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-trash me-2"></i> {% trans 'Delete My Account' %}
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="text-muted small mt-4">
+                            <p class="mb-1">{% trans 'If you have any questions, please contact our support team.' %}</p>
+                            <p class="mb-0">{% trans 'Thank you for being part of our community.' %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add confirmation before form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('{% trans "Are you absolutely sure you want to delete your account? This action cannot be undone." %}')) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
