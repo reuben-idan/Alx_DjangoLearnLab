@@ -1,51 +1,114 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Login - Django Blog{% endblock %}
 
 {% block content %}
-    <div class="auth-container">
-        <h2>Login</h2>
-        
-        {% if form.errors %}
-            <div class="alert alert-error">
-                Your username and password didn't match. Please try again.
-            </div>
-        {% endif %}
-        
-        {% if next %}
-            {% if user.is_authenticated %}
-                <div class="alert alert-info">
-                    Your account doesn't have access to this page. To proceed, please login with an account that has access.
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">Login</h2>
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            Your username and password didn't match. Please try again.
+                        </div>
+                    {% endif %}
+                    
+                    {% if next %}
+                        {% if user.is_authenticated %}
+                            <div class="alert alert-warning">
+                                Your account doesn't have access to this page.
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                Please login to see this page.
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <form method="post" action="{% url 'login' %}" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                            <input type="text" name="username" class="form-control" id="{{ form.username.id_for_label }}" required>
+                            <div class="invalid-feedback">
+                                Please enter your username.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" name="password" class="form-control" id="{{ form.password.id_for_label }}" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button" toggle="#{{ form.password.id_for_label }}">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback">
+                                Please enter your password.
+                            </div>
+                            <div class="text-end mt-1">
+                                <small><a href="{% url 'password_reset' %}">Forgot password?</a></small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                            <label class="form-check-label" for="remember_me">Remember me</label>
+                        </div>
+                        
+                        <input type="hidden" name="next" value="{{ next }}">
+                        
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                    </form>
+                    
+                    <div class="text-center mt-3">
+                        <p class="mb-0">Don't have an account? <a href="{% url 'signup' %}">Sign up</a></p>
+                    </div>
                 </div>
-            {% else %}
-                <div class="alert alert-info">
-                    Please login to see this page.
-                </div>
-            {% endif %}
-        {% endif %}
-        
-        <form method="post" action="{% url 'login' %}" class="auth-form">
-            {% csrf_token %}
-            
-            <div class="form-group">
-                <label for="{{ form.username.id_for_label }}">Username</label>
-                {{ form.username }}
             </div>
-            
-            <div class="form-group">
-                <label for="{{ form.password.id_for_label }}">Password</label>
-                {{ form.password }}
-                <small><a href="{% url 'password_reset' %}">Forgot password?</a></small>
-            </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn">Login</button>
-                <input type="hidden" name="next" value="{{ next }}">
-            </div>
-        </form>
-        
-        <div class="auth-links">
-            <p>Don't have an account? <a href="{% url 'signup' %}">Sign up</a></p>
         </div>
     </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Toggle password visibility
+const togglePassword = document.querySelector('.toggle-password');
+if (togglePassword) {
+    togglePassword.addEventListener('click', function() {
+        const password = document.querySelector(this.getAttribute('toggle'));
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('bi-eye');
+        this.querySelector('i').classList.toggle('bi-eye-slash');
+    });
+}
+
+// Form validation
+(function () {
+    'use strict'
+    
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    const forms = document.querySelectorAll('form')
+    
+    // Loop over them and prevent submission
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %}
 {% endblock %}

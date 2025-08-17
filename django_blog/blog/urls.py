@@ -2,15 +2,17 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
 from . import views
 from .views import (
     CommentCreateView, CommentUpdateView, CommentDeleteView,
-    PostSearchView, PostByTagListView
+    PostSearchView, PostByTagListView, SignUpView, profile, CustomLoginView
 )
 
 urlpatterns = [
     # Core URLs
-    path('', views.PostListView.as_view(), name='post_list'),
+    path('', views.home, name='blog-home'),
+    path('home/', views.home, name='home'),
     path('posts/', views.PostListView.as_view(), name='post_list'),
     path('posts/create/', views.PostCreateView.as_view(), name='post_create'),
     path('posts/<int:year>/<int:month>/<int:day>/<slug:slug>/', 
@@ -34,10 +36,10 @@ urlpatterns = [
     
     # Authentication URLs
     path('accounts/', include([
-        path('login/', views.CustomLoginView.as_view(), name='login'),
+        path('login/', CustomLoginView.as_view(template_name='registration/login.html'), name='login'),
         path('logout/', auth_views.LogoutView.as_view(template_name='registration/logout.html'), name='logout'),
-        path('signup/', views.SignUpView.as_view(), name='signup'),
-        path('profile/', views.profile, name='profile'),
+        path('signup/', SignUpView.as_view(), name='signup'),
+        path('profile/', profile, name='profile'),
         path('password_change/', auth_views.PasswordChangeView.as_view(
             template_name='registration/password_change_form.html',
             success_url='password_change_done'

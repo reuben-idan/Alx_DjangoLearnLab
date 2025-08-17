@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'taggit',
     'blog.apps.BlogConfig',
     'django_ratelimit',
+    'crispy_forms',
+    'crispy_bootstrap5',
 ]
 
 MIDDLEWARE = [
@@ -127,13 +129,17 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'blog/static'),  # Add this line to include app's static files
+    os.path.join(BASE_DIR, 'blog/static'),
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Media files
+# Media files (user uploaded files)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Crispy Forms
+CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
+CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -155,9 +161,9 @@ RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
 
 # Authentication settings
-LOGIN_REDIRECT_URL = 'home'
+LOGIN_REDIRECT_URL = 'blog-home'  # Changed from 'home' to 'blog-home'
 LOGIN_URL = 'login'
-LOGOUT_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'blog-home'  # Changed from 'home' to 'blog-home'
 
 # Media files (user uploaded files)
 MEDIA_URL = '/media/'

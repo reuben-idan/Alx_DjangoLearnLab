@@ -48,25 +48,41 @@ class CustomLoginView(BaseLoginView):
 
 @login_required
 def profile(request):
+    """
+    View for user profile management.
+    Handles both GET (display form) and POST (update profile) requests.
+    """
     if request.method == 'POST':
+        # Process form submission
         u_form = UserUpdateForm(request.POST, instance=request.user)
         p_form = ProfileUpdateForm(
             request.POST,
             request.FILES,
             instance=request.user.profile
         )
+        
         if u_form.is_valid() and p_form.is_valid():
             u_form.save()
             p_form.save()
-            messages.success(request, 'Your profile has been updated!')
+            messages.success(request, 'Your profile has been updated successfully!')
             return redirect('profile')
+        else:
+            # If forms are not valid, show error messages
+            for field, errors in u_form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Error in {field}: {error}")
+            for field, errors in p_form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Error in {field}: {error}")
     else:
+        # For GET request, initialize forms with current user data
         u_form = UserUpdateForm(instance=request.user)
         p_form = ProfileUpdateForm(instance=request.user.profile)
 
     context = {
+        'title': 'Profile',
         'u_form': u_form,
-        'p_form': p_form
+        'p_form': p_form,
     }
     return render(request, 'registration/profile.html', context)
 from django.conf import settings
