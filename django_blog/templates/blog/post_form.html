@@ -10,15 +10,19 @@
 {% endblock %}
 
 {% block blog_content %}
-    <div class="card
+    <div class="card">
         <div class="card-body">
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 
                 <div class="row">
                     <div class="col-md-8">
-                        {{ form.title|as_crispy_field }}
-                        {{ form.content|as_crispy_field }}
+                        <div class="mb-3">
+                            {{ form.title|as_crispy_field }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.content|as_crispy_field }}
+                        </div>
                         
                         <div class="mb-3">
                             <label class="form-label">Featured Image</label>
