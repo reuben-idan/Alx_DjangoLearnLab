@@ -1,5 +1,5 @@
 import os
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView, View
 from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
@@ -273,10 +273,69 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
 
     def form_valid(self, form):
         messages.success(
-            self.request, 
             _('Your password has been set. You may go ahead and log in now.')
         )
         return super().form_valid(form)
+
+class CommentCreateView(LoginRequiredMixin, CreateView):
+    """View for creating a new comment on a post."""
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/comment_form.html'
+    
+    def form_valid(self, form):
+        """Set the author to the current user and associate with the post."""
+        form.instance.author = self.request.user
+        form.instance.post = get_object_or_404(Post, pk=self.kwargs['pk'])
+        response = super().form_valid(form)
+        messages.success(self.request, 'Your comment has been added!')
+        return response
+    
+    def get_success_url(self):
+        """Redirect back to the post detail page."""
+        return reverse('post_detail', kwargs={'pk': self.kwargs['pk']}) + '#comments'
+
+
+class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """View for updating an existing comment."""
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/comment_form.html'
+    
+    def test_func(self):
+        """Only allow the comment author to update."""
+        comment = self.get_object()
+        return comment.author == self.request.user
+    
+    def form_valid(self, form):
+        """Show success message after update."""
+        messages.success(self.request, 'Your comment has been updated!')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        """Redirect back to the post detail page."""
+        return reverse('post_detail', kwargs={'pk': self.object.post.pk}) + '#comments'
+
+
+class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """View for deleting a comment."""
+    model = Comment
+    template_name = 'blog/comment_confirm_delete.html'
+    
+    def test_func(self):
+        """Only allow the comment author or post author to delete."""
+        comment = self.get_object()
+        return comment.author == self.request.user or comment.post.author == self.request.user
+    
+    def delete(self, request, *args, **kwargs):
+        """Show success message after deletion."""
+        messages.success(request, 'Your comment has been deleted!')
+        return super().delete(request, *args, **kwargs)
+    
+    def get_success_url(self):
+        """Redirect back to the post detail page."""
+        return reverse('post_detail', kwargs={'pk': self.object.post.pk}) + '#comments'
+
 
 def about(request):
     """View for the about page."""
