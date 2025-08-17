@@ -8,7 +8,7 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView
 )
 from rest_framework.views import APIView
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.filters import SearchFilter
 from rest_framework.reverse import reverse
 from rest_framework.decorators import api_view
 from django_filters import rest_framework as filters
@@ -99,7 +99,7 @@ class BookListView(ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
     
     # Filtering, searching, and ordering configuration
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, filters.OrderingFilter]
     
     # Define filter fields
     filterset_fields = {
