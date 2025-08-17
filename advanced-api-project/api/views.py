@@ -97,7 +97,21 @@ class BookListView(ListAPIView):
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
     
-    # Filtering configuration
+    # Filtering, searching, and ordering configuration
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    
+    # Define filter fields
+    filterset_fields = {
+        'author': ['exact'],
+        'publication_year': ['exact', 'gt', 'lt', 'gte', 'lte'],
+    }
+    
+    # Define search fields
+    search_fields = ['title', 'author__name']
+    
+    # Define ordering fields
+    ordering_fields = ['title', 'publication_year', 'author__name']
+    ordering = ['title']  # Default ordering
     filter_backends = [
         DjangoFilterBackend,  # For field filtering
         SearchFilter,  # For search functionality
@@ -121,10 +135,20 @@ class BookListView(ListAPIView):
     
     def get_queryset(self):
         """
-        Get the list of items for this view.
-        This method is overridden to add custom filtering if needed.
+        Get the list of items for this view with applied filters, search, and ordering.
         """
-        return Book.objects.all()
+        queryset = Book.objects.select_related('author').all()
+        
+        # Apply custom filtering if needed
+        author_id = self.request.query_params.get('author')
+        if author_id:
+            queryset = queryset.filter(author_id=author_id)
+            
+        publication_year = self.request.query_params.get('publication_year')
+        if publication_year:
+            queryset = queryset.filter(publication_year=publication_year)
+            
+        return queryset
     
     def perform_create(self, serializer):
         """
