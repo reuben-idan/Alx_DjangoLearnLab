@@ -1,6 +1,8 @@
 import os
 from django.shortcuts import render, get_object_or_404, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView, View
+from django.db.models import Q
+from taggit.models import Tag
 from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 from django.contrib import messages
@@ -358,16 +360,36 @@ class PostSearchView(ListView):
     
     def get_queryset(self):
         """Return search results based on query parameters."""
-        form = SearchForm(self.request.GET or None)
-        if form.is_valid():
-            return form.search()
-        return Post.published.all()
+        queryset = Post.published.all()
+        query = self.request.GET.get('query')
+        tag_slug = self.kwargs.get('tag_slug')
+        
+        # Search by query string
+        if query:
+            queryset = queryset.filter(
+                Q(title__icontains=query) |
+                Q(content__icontains=query) |
+                Q(tags__name__icontains=query)
+            ).distinct()
+        
+        # Filter by tag if provided
+        if tag_slug:
+            tag = get_object_or_404(Tag, slug=tag_slug)
+            queryset = queryset.filter(tags__in=[tag])
+        
+        return queryset
     
     def get_context_data(self, **kwargs):
-        """Add search form and query to the context."""
+        """Add search form, query, and selected tag to the context."""
         context = super().get_context_data(**kwargs)
         context['search_form'] = SearchForm(self.request.GET or None)
         context['query'] = self.request.GET.get('query', '')
+        
+        # Add selected tag to context if present
+        tag_slug = self.kwargs.get('tag_slug')
+        if tag_slug:
+            context['tag'] = get_object_or_404(Tag, slug=tag_slug)
+        
         context['selected_tag'] = self.request.GET.get('tag', '')
         return context
 
