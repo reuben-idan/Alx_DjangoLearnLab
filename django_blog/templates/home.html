@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Django Blog{% endblock %}
+
+{% block content %}
+    <h2>Latest Blog Posts</h2>
+    
+    {% if user.is_authenticated %}
+        <div class="new-post">
+            <a href="{% url 'post_new' %}" class="btn">Create New Post</a>
+        </div>
+    {% endif %}
+
+    <div class="posts">
+        {% for post in posts %}
+            <article class="post">
+                <h3><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h3>
+                <div class="post-meta">
+                    <span class="author">By {{ post.author.username }}</span>
+                    <span class="date">{{ post.published_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="post-content">
+                    {{ post.content|truncatewords:50|linebreaks }}
+                </div>
+                <a href="{% url 'post_detail' post.pk %}" class="read-more">Read more &rarr;</a>
+            </article>
+        {% empty %}
+            <p>No blog posts yet.</p>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
+{% endblock %}
