@@ -32,7 +32,7 @@ from .forms import (
 class PostListView(ListView):
     """View for displaying a list of blog posts."""
     model = Post
-    template_name = 'blog/post_list.html'
+    template_name = 'post_list.html'
     context_object_name = 'posts'
     paginate_by = 10
     
@@ -46,7 +46,7 @@ class PostListView(ListView):
 class PostDetailView(DetailView):
     """View for displaying a single blog post."""
     model = Post
-    template_name = 'blog/post_detail.html'
+    template_name = 'post_detail.html'
     context_object_name = 'post'
     
     def get_queryset(self):
@@ -67,7 +67,8 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     """View for creating a new blog post."""
     model = Post
     form_class = PostForm
-    template_name = 'blog/post_form.html'
+    template_name = 'post_form.html'
+    login_url = 'login'
     
     def form_valid(self, form):
         """Set the author to the current user and handle published status."""
@@ -88,7 +89,9 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """View for updating an existing blog post."""
     model = Post
     form_class = PostForm
-    template_name = 'blog/post_form.html'
+    template_name = 'post_form.html'  # Updated template path
+    login_url = 'login'
+    permission_denied_message = "You don't have permission to edit this post."
     
     def test_func(self):
         """Only allow the author or users with edit permission to update."""
@@ -107,8 +110,10 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """View for deleting a blog post."""
     model = Post
-    template_name = 'blog/post_confirm_delete.html'
+    template_name = 'post_confirm_delete.html'  # Updated template path
     success_url = reverse_lazy('post_list')
+    login_url = 'login'
+    permission_denied_message = "You don't have permission to delete this post."
     
     def test_func(self):
         """Only allow the author or users with delete permission to delete."""
@@ -281,7 +286,8 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
     """View for creating a new comment on a post."""
     model = Comment
     form_class = CommentForm
-    template_name = 'blog/comment_form.html'
+    template_name = 'comment_form.html'  # Updated template path
+    login_url = 'login'
     
     def form_valid(self, form):
         """Set the author to the current user and associate with the post."""
@@ -300,7 +306,9 @@ class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """View for updating an existing comment."""
     model = Comment
     form_class = CommentForm
-    template_name = 'blog/comment_form.html'
+    template_name = 'comment_form.html'  # Updated template path
+    login_url = 'login'
+    permission_denied_message = "You don't have permission to edit this comment."
     
     def test_func(self):
         """Only allow the comment author to update."""
@@ -320,7 +328,9 @@ class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """View for deleting a comment."""
     model = Comment
-    template_name = 'blog/comment_confirm_delete.html'
+    template_name = 'comment_confirm_delete.html'  # Updated template path
+    login_url = 'login'
+    permission_denied_message = "You don't have permission to delete this comment."
     
     def test_func(self):
         """Only allow the comment author or post author to delete."""
