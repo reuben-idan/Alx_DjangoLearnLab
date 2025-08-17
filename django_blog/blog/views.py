@@ -178,8 +178,8 @@ def about(request):
     """View for the about page."""
     return render(request, 'about.html', {'title': _('About')})
 
-@login_required
-delete_account(request):
+@login_required()
+def delete_account(request):
     """View for deleting user account."""
     if request.method == 'POST':
         user = request.user
