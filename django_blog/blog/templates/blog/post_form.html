@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}New{% endif %} Post - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card
+            <div class="card-header">
+                <h2 class="mb-0">{% if form.instance.pk %}Edit Post{% else %}Create New Post{% endif %}</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Title -->
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            {{ form.title.label }}
+                            {% if form.title.field.required %}<span class="text-danger">*</span>{% endif %}
+                        </label>
+                        {{ form.title|add_class:"form-control" }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.title.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">{{ form.title.help_text }}</div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="mb-3">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">
+                            {{ form.content.label }}
+                            {% if form.content.field.required %}<span class="text-danger">*</span>{% endif %}
+                        </label>
+                        {{ form.content|add_class:"form-control"|attr:"rows:10" }}
+                        {% if form.content.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.content.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">{{ form.content.help_text }}</div>
+                    </div>
+                    
+                    <!-- Featured Image -->
+                    <div class="mb-3">
+                        <label for="{{ form.featured_image.id_for_label }}" class="form-label">
+                            {{ form.featured_image.label }}
+                        </label>
+                        {{ form.featured_image|add_class:"form-control" }}
+                        {% if form.featured_image.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.featured_image.errors.0 }}
+                            </div>
+                        {% endif %}
+                        {% if form.instance.featured_image %}
+                            <div class="mt-2">
+                                <img src="{{ form.instance.featured_image.url }}" alt="Current featured image" class="img-thumbnail" style="max-height: 200px;">
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" name="featured_image-clear" id="featured_image-clear_id">
+                                    <label class="form-check-label" for="featured_image-clear_id">
+                                        Clear current image
+                                    </label>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="form-text">{{ form.featured_image.help_text }}</div>
+                    </div>
+                    
+                    <!-- Status -->
+                    {% if user.has_perm('blog.can_publish') %}
+                        <div class="mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">
+                                {{ form.status.label }}
+                                {% if form.status.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ form.status|add_class:"form-select" }}
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.status.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">{{ form.status.help_text }}</div>
+                        </div>
+                    {% else %}
+                        <input type="hidden" name="status" value="draft">
+                    {% endif %}
+                    
+                    <!-- Allow Comments -->
+                    <div class="mb-3 form-check">
+                        {{ form.allow_comments|add_class:"form-check-input" }}
+                        <label class="form-check-label" for="{{ form.allow_comments.id_for_label }}">
+                            {{ form.allow_comments.label }}
+                        </label>
+                        {% if form.allow_comments.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.allow_comments.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">{{ form.allow_comments.help_text }}</div>
+                    </div>
+                    
+                    <!-- Tags -->
+                    <div class="mb-4">
+                        <label for="{{ form.tags.id_for_label }}" class="form-label">
+                            {{ form.tags.label }}
+                        </label>
+                        {{ form.tags|add_class:"form-control" }}
+                        {% if form.tags.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.tags.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">{{ form.tags.help_text }}</div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if form.instance.pk %}{{ form.instance.get_absolute_url }}{% else %}{% url 'post_list' %}{% endif %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancel
+                        </a>
+                        <div>
+                            {% if form.instance.pk %}
+                                <a href="{% url 'post_delete' form.instance.pk %}" class="btn btn-outline-danger me-2">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {% if form.instance.pk %}Update{% else %}Create{% endif %} Post
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Preview Modal -->
+        <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="previewModalLabel">Post Preview</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="previewContent">
+                        <!-- Preview content will be inserted here by JavaScript -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Preview functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const previewModal = document.getElementById('previewModal');
+        const previewContent = document.getElementById('previewContent');
+        const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+        const contentInput = document.getElementById('{{ form.content.id_for_label }}');
+        
+        // Handle preview button click
+        const previewButton = document.getElementById('previewButton');
+        if (previewButton) {
+            previewButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Get the values from the form
+                const title = titleInput.value || 'No title';
+                const content = contentInput.value || 'No content';
+                
+                // Create the preview HTML
+                const previewHTML = `
+                    <h1>${title}</h1>
+                    <div class="post-content">
+                        ${marked.parse(content) || '<p>No content to preview.</p>'}
+                    </div>
+                `;
+                
+                // Update the preview content
+                previewContent.innerHTML = previewHTML;
+                
+                // Show the preview modal
+                const modal = new bootstrap.Modal(previewModal);
+                modal.show();
+            });
+        }
+        
+        // Initialize Marked.js for markdown preview
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            sanitize: true
+        });
+    });
+</script>
+{% endblock %}
