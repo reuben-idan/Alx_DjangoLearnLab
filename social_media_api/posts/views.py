@@ -1,8 +1,9 @@
 from django.shortcuts import render
-from rest_framework import viewsets, permissions, filters
+from rest_framework import viewsets, permissions, filters, generics
 from rest_framework.permissions import IsAuthenticated
 from .models import Post, Comment
 from .serializers import PostSerializer, CommentSerializer
+from rest_framework.pagination import PageNumberPagination
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """Allow edits/deletes only to owners; read-only for others."""
@@ -31,3 +32,20 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 # Create your views here.
+
+
+class FeedView(generics.ListAPIView):
+    """Aggregated feed of posts from users the request.user follows."""
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        following_qs = getattr(user, 'following', None)
+        if following_qs is None:
+            return Post.objects.none()
+        return (
+            Post.objects.select_related('author')
+            .filter(author__in=following_qs.all())
+            .order_by('-created_at')
+        )
