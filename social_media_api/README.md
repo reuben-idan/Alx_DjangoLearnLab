@@ -148,6 +148,38 @@ curl -X POST http://127.0.0.1:8000/api/comments/ \
   -d '{"post":1, "content":"Nice post!"}'
 ```
 
+### Follows and Feed
+
+Follow/unfollow other users and view a personalized feed of posts from users you follow.
+
+Base paths:
+
+- Accounts: `/api/accounts/`
+- Feed: `/api/`
+
+Endpoints:
+
+- `POST /api/accounts/follow/<int:user_id>/` — follow a user
+- `POST /api/accounts/unfollow/<int:user_id>/` — unfollow a user
+- `GET /api/feed/` — list posts from followed users (paginated, newest first)
+
+Headers: `Authorization: Token <token>` required.
+
+Quick cURL:
+
+```bash
+# Follow user with ID 2
+curl -X POST http://127.0.0.1:8000/api/accounts/follow/2/ \
+  -H "Authorization: Token <token>"
+
+# Unfollow user with ID 2
+curl -X POST http://127.0.0.1:8000/api/accounts/unfollow/2/ \
+  -H "Authorization: Token <token>"
+
+# Get your feed
+curl -H "Authorization: Token <token>" http://127.0.0.1:8000/api/feed/
+```
+
 ### Notes
 
 - Default permission is `IsAuthenticated` in DRF settings; registration and login views override with `AllowAny`.
@@ -156,6 +188,6 @@ curl -X POST http://127.0.0.1:8000/api/comments/ \
 
 ## Next Steps
 
-- Add endpoints to follow/unfollow users and list followers/following.
-- Add posts app and content endpoints.
-- Add pagination and throttling.
+- Add endpoints to list a user's followers and following.
+- Add throttling/rate limits for follow actions.
+- Add OpenAPI/Swagger schema and automated tests.
