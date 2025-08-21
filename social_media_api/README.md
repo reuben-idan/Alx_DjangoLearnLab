@@ -230,3 +230,74 @@ curl -H "Authorization: Token <token>" http://127.0.0.1:8000/api/notifications/
 - Add endpoints to list a user's followers and following.
 - Add throttling/rate limits for follow and like actions.
 - Add OpenAPI/Swagger schema and automated tests.
+
+## Deployment
+
+This project is production-ready. Below are concise steps to deploy to Heroku (similar steps apply to Render/Railway/AWS).
+
+### Production Settings
+
+Key configuration is environment-driven in `social_media_api/social_media_api/settings.py`:
+
+- `DJANGO_SECRET_KEY`: strong random string (required)
+- `DJANGO_DEBUG`: `false` in production
+- `DJANGO_ALLOWED_HOSTS`: comma-separated hostnames (e.g. `yourapp.herokuapp.com`)
+- `DJANGO_CSRF_TRUSTED_ORIGINS`: comma-separated full origins (e.g. `https://yourapp.herokuapp.com`)
+- `DJANGO_SECURE_SSL_REDIRECT`: `true`
+- `DATABASE_URL`: Postgres URL (`postgres://USER:PASS@HOST:5432/DB`)
+
+Static files are served via WhiteNoise. Run `collectstatic` during deploy.
+
+### Requirements created
+
+- `requirements.txt` includes: Django, djangorestframework, dj-database-url, WhiteNoise, Gunicorn, Pillow, psycopg2-binary
+- `Procfile`: `web: gunicorn social_media_api.wsgi:application --log-file - --preload`
+- `runtime.txt`: Python version
+- `.env.example`: sample environment variables
+
+### Deploy to Heroku
+
+Prereqs: Heroku account and CLI installed, a Postgres add-on (Hobby Dev is fine).
+
+```bash
+# From the social_media_api directory
+heroku create your-app-name
+heroku buildpacks:set heroku/python
+heroku addons:create heroku-postgresql:hobby-dev
+
+# Config vars
+heroku config:set DJANGO_SECRET_KEY="<strong-random>"
+heroku config:set DJANGO_DEBUG=false
+heroku config:set DJANGO_ALLOWED_HOSTS=your-app-name.herokuapp.com
+heroku config:set DJANGO_CSRF_TRUSTED_ORIGINS=https://your-app-name.herokuapp.com
+
+# Heroku provides DATABASE_URL automatically via add-on
+
+# Push code
+git push heroku main
+
+# One-time setup
+heroku run python manage.py migrate
+heroku run python manage.py collectstatic --noinput
+
+# (optional) create superuser
+heroku run python manage.py createsuperuser
+```
+
+Your API will be available at: `https://your-app-name.herokuapp.com/`
+
+### Deploy to Render/Railway (outline)
+
+- Create a Web Service from this repo.
+- Environment: `PYTHON_VERSION=3.12.x`, set env vars as above.
+- Start command: `gunicorn social_media_api.wsgi:application --log-file - --preload`
+- Add managed Postgres; set `DATABASE_URL`.
+- Add a post-deploy step to run `python manage.py migrate && python manage.py collectstatic --noinput`.
+
+### Monitoring & Maintenance
+
+- Logging: Review provider logs (Heroku `heroku logs --tail`).
+- Errors: Consider Sentry for error monitoring.
+- Security: Rotate `DJANGO_SECRET_KEY` if leaked; keep dependencies updated.
+- Backups: Use managed DB automatic backups (Heroku PG Backups).
+
