@@ -180,6 +180,45 @@ curl -X POST http://127.0.0.1:8000/api/accounts/unfollow/2/ \
 curl -H "Authorization: Token <token>" http://127.0.0.1:8000/api/feed/
 ```
 
+### Likes
+
+Endpoints:
+
+- `POST /api/posts/{id}/like/` — like a post (idempotent)
+- `POST /api/posts/{id}/unlike/` — unlike a post
+
+Headers: `Authorization: Token <token>` required.
+
+Quick cURL:
+
+```bash
+# Like post 5
+curl -X POST -H "Authorization: Token <token>" \
+  http://127.0.0.1:8000/api/posts/5/like/
+
+# Unlike post 5
+curl -X POST -H "Authorization: Token <token>" \
+  http://127.0.0.1:8000/api/posts/5/unlike/
+```
+
+### Notifications
+
+Users receive notifications for:
+
+- New followers
+- Likes on their posts
+- Comments on their posts
+
+Endpoint:
+
+- `GET /api/notifications/` — list notifications (unread first, then newest)
+
+Quick cURL:
+
+```bash
+curl -H "Authorization: Token <token>" http://127.0.0.1:8000/api/notifications/
+```
+
 ### Notes
 
 - Default permission is `IsAuthenticated` in DRF settings; registration and login views override with `AllowAny`.
@@ -189,5 +228,5 @@ curl -H "Authorization: Token <token>" http://127.0.0.1:8000/api/feed/
 ## Next Steps
 
 - Add endpoints to list a user's followers and following.
-- Add throttling/rate limits for follow actions.
+- Add throttling/rate limits for follow and like actions.
 - Add OpenAPI/Swagger schema and automated tests.
