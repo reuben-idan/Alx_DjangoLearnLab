@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: social-media-api
+    env: python
+    rootDir: social_media_api
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn social_media_api.wsgi:application --log-file - --preload
+    autoDeploy: true
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: social-media-db
+          property: connectionString
+      - key: DJANGO_ALLOWED_HOSTS
+        value: "*"
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        # Set after first deploy to your actual URL, e.g. https://social-media-api.onrender.com
+        value: ""
+    postDeployCommand: |
+      python manage.py migrate && \
+      python manage.py collectstatic --noinput
+
+  - type: postgresql
+    name: social-media-db
+    plan: free
