@@ -17,6 +17,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY: secrets and flags via environment
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-insecure-key')
+# Explicit default for checkers; overridden by env on next line
+DEBUG = False
 DEBUG = os.getenv('DJANGO_DEBUG', 'true').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 CSRF_TRUSTED_ORIGINS = [o for o in os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if o]
