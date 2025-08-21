@@ -104,7 +104,51 @@ curl -X PATCH http://127.0.0.1:8000/api/accounts/profile/ \
   -F "profile_picture=@/full/path/to/file.jpg"
 ```
 
-## Notes
+### Posts and Comments
+
+Base path for posts/comments: `/api/`
+
+- `GET /api/posts/` — list posts (paginated). Supports `?search=<term>` across title, content, author username.
+- `POST /api/posts/` — create post. Body: `{ "title": "...", "content": "..." }`
+- `GET /api/posts/{id}/` — retrieve post
+- `PUT/PATCH /api/posts/{id}/` — update own post
+- `DELETE /api/posts/{id}/` — delete own post
+
+- `GET /api/comments/` — list comments (paginated)
+- `POST /api/comments/` — create comment. Body: `{ "post": <post_id>, "content": "..." }`
+- `GET /api/comments/{id}/` — retrieve comment
+- `PUT/PATCH /api/comments/{id}/` — update own comment
+- `DELETE /api/comments/{id}/` — delete own comment
+
+All posts/comments endpoints require header: `Authorization: Token <token>`.
+
+#### Quick cURL
+
+Create post:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/posts/ \
+  -H "Authorization: Token <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Hello","content":"World"}'
+```
+
+Search posts:
+
+```bash
+curl -H "Authorization: Token <token>" "http://127.0.0.1:8000/api/posts/?search=Hello"
+```
+
+Comment on a post:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/comments/ \
+  -H "Authorization: Token <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"post":1, "content":"Nice post!"}'
+```
+
+### Notes
 
 - Default permission is `IsAuthenticated` in DRF settings; registration and login views override with `AllowAny`.
 - Media files are served in development via `settings.DEBUG` and project `urls.py`.
