@@ -7,6 +7,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, ProfileUpdateSerializer
+from notifications.utils import create_notification
 
 # Alias to satisfy explicit reference pattern
 CustomUser = get_user_model()
@@ -81,6 +82,8 @@ class FollowUserView(APIView):
 
         # request.user.following is reverse of 'followers'
         request.user.following.add(target)
+        # notify target user
+        create_notification(recipient=target, actor=request.user, verb='started following you', target=request.user)
         return Response({"detail": f"Now following {target.username}."}, status=status.HTTP_200_OK)
 
 

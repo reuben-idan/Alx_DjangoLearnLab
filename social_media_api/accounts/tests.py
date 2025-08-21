@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.authtoken.models import Token
+from notifications.models import Notification
 
 
 class FollowUnfollowTests(APITestCase):
@@ -29,3 +30,10 @@ class FollowUnfollowTests(APITestCase):
         resp = self.client.post(url)
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(self.user2 in self.user1.following.all())
+
+    def test_follow_creates_notification(self):
+        url = reverse('follow-user', args=[self.user2.id])
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, 200)
+        notif = Notification.objects.filter(recipient=self.user2, actor=self.user1, verb__icontains='following').first()
+        self.assertIsNotNone(notif)

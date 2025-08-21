@@ -3,6 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.authtoken.models import Token
 from .models import Post
+from notifications.models import Notification
 
 
 class FeedViewTests(APITestCase):
@@ -41,3 +42,32 @@ class FeedViewTests(APITestCase):
         titles = [item['title'] for item in resp.data['results']]
         # Bob 2 created after Bob 1, so it should appear first
         self.assertTrue(titles.index("Bob 2") < titles.index("Bob 1"))
+
+
+class LikeTests(APITestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.author = User.objects.create_user(username="author", password="pass12345")
+        self.liker = User.objects.create_user(username="liker", password="pass12345")
+        self.post = Post.objects.create(author=self.author, title="A", content="B")
+        token, _ = Token.objects.get_or_create(user=self.liker)
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    def test_like_creates_notification_and_is_idempotent(self):
+        url = reverse('post-like', args=[self.post.id])
+        r1 = self.client.post(url)
+        self.assertEqual(r1.status_code, 200)
+        notif = Notification.objects.filter(recipient=self.author, actor=self.liker, verb__icontains='liked').first()
+        self.assertIsNotNone(notif)
+        # Second like should not duplicate
+        r2 = self.client.post(url)
+        self.assertEqual(r2.status_code, 200)
+        self.assertEqual(Notification.objects.filter(recipient=self.author, actor=self.liker, verb__icontains='liked').count(), 1)
+
+    def test_unlike(self):
+        like_url = reverse('post-like', args=[self.post.id])
+        unlike_url = reverse('post-unlike', args=[self.post.id])
+        self.client.post(like_url)
+        r = self.client.post(unlike_url)
+        self.assertEqual(r.status_code, 200)
