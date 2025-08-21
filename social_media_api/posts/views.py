@@ -1,12 +1,13 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions, filters, generics
-from .models import Post, Comment
+from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
-from notifications.utils import create_notification
+from notifications.models import Notification
+from django.contrib.contenttypes.models import ContentType
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """Allow edits/deletes only to owners; read-only for others."""
@@ -28,19 +29,24 @@ class PostViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk=None):
-        post = self.get_object()
-        from .models import Like
-        obj, created = Like.objects.get_or_create(post=post, user=request.user)
+        post = generics.get_object_or_404(Post, pk=pk)
+        obj, created = Like.objects.get_or_create(user=request.user, post=post)
         if created:
             # notify post author
-            create_notification(recipient=post.author, actor=request.user, verb='liked your post', target=post)
+            ct = ContentType.objects.get_for_model(Post)
+            Notification.objects.create(
+                recipient=post.author,
+                actor=request.user,
+                verb='liked your post',
+                target_content_type=ct,
+                target_object_id=post.pk,
+            )
             return Response({"detail": "Post liked."}, status=status.HTTP_200_OK)
         return Response({"detail": "Already liked."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def unlike(self, request, pk=None):
-        post = self.get_object()
-        from .models import Like
+        post = generics.get_object_or_404(Post, pk=pk)
         deleted, _ = Like.objects.filter(post=post, user=request.user).delete()
         if deleted:
             return Response({"detail": "Like removed."}, status=status.HTTP_200_OK)
@@ -54,11 +60,13 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         comment = serializer.save(author=self.request.user)
         # notify post author on comment
-        create_notification(
+        ct = ContentType.objects.get_for_model(Post)
+        Notification.objects.create(
             recipient=comment.post.author,
             actor=self.request.user,
             verb='commented on your post',
-            target=comment.post,
+            target_content_type=ct,
+            target_object_id=comment.post.pk,
         )
 
 # Create your views here.
