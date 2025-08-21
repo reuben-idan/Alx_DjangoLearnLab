@@ -23,6 +23,9 @@ DEBUG = os.getenv('DJANGO_DEBUG', 'true').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 CSRF_TRUSTED_ORIGINS = [o for o in os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if o]
 
+# Expose PORT for platforms that inject it (e.g., Render/Railway)
+PORT = int(os.getenv('PORT', '8000'))
+
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
